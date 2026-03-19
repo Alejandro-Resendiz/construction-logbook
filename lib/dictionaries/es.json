@@ -1,0 +1,97 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "update_log": "Finalizar Turno",
+    "admin_dashboard": "Panel Admin",
+    "admin_correction": "Corrección",
+    "login": "Login Admin"
+  },
+  "new_log": {
+    "title": "Registro de Maquinaria",
+    "machinery": "Maquinaria",
+    "select_machinery": "Selecciona maquinaria...",
+    "project": "Proyecto",
+    "select_project": "Selecciona proyecto...",
+    "project_hint": "Si el proyecto no aparece, colócalo en observaciones después.",
+    "date": "Fecha",
+    "operator_name": "Nombre del Operador",
+    "operator_placeholder": "Juan Perez",
+    "start_time": "Hora de Inicio",
+    "fuel_liters": "Combustible (Litros)",
+    "fuel_placeholder": "0.00",
+    "submit": "Registrar Inicio",
+    "submitting": "Registrando...",
+    "success_title": "Registro Creado!",
+    "success_hint": "Guarda este código para actualizar tu salida:",
+    "new_registration_button": "Nuevo Registro"
+  },
+  "update_log": {
+    "title": "Actualizar Salida",
+    "hash_id_label": "Código de Registro",
+    "hash_id_placeholder": "Ej: 012345",
+    "search_button": "Buscar Registro",
+    "searching": "Buscando...",
+    "operator": "Operador",
+    "date": "Fecha",
+    "machinery": "Maquinaria",
+    "project": "Proyecto",
+    "start_time": "Hora de Inicio",
+    "fuel_liters": "Combustible (Lts)",
+    "already_completed": "Ya está actualizado, contacta a tu administrador.",
+    "end_time": "Hora de Salida",
+    "observations": "Observaciones",
+    "observations_placeholder": "Cualquier detalle adicional...",
+    "submit": "Finalizar Turno",
+    "updating": "Actualizando...",
+    "success_title": "Actualización Exitosa!",
+    "success_message": "Tu registro de salida ha sido guardado.",
+    "back_to_home": "Volver al Inicio",
+    "search_another": "Buscar otro código",
+    "not_found": "No se encontró el registro."
+  },
+  "admin": {
+    "login_title": "Panel de Administración",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "login_button": "Iniciar Sesión",
+    "logging_in": "Iniciando sesión...",
+    "login_error": "Credenciales inválidas",
+    "dashboard_title": "Reporte Semanal",
+    "logout": "Cerrar Sesión",
+    "select_project": "Filtrar por Proyecto",
+    "select_machine": "Filtrar por Maquina",
+    "week": "Semana",
+    "export_pdf": "Exportar PDF",
+    "loading": "Cargando...",
+    "no_logs": "No hay registros para este filtro.",
+    "columns": {
+      "date": "Fecha",
+      "operator": "Operador",
+      "project": "Proyecto",
+      "start": "Inicio",
+      "end": "Fin",
+      "fuel": "Lts",
+      "observations": "Observaciones",
+      "signature": "Firma del Operador"
+    },
+    "signatures": {
+      "operator": "Nombre y firma de responsable de lubricantes",
+      "admin": "Nombre y firma de responsable de maquinaria"
+    },
+    "correction": {
+      "title": "Cierre de turno",
+      "success": "Registro Corregido!",
+      "save_button": "Guardar Corrección",
+      "cancel": "Cancelar",
+      "back_to_panel": "Volver al Panel"
+    },
+    "pdf": {
+      "report_title": "Bitácora de Maquinaria",
+      "machine_subtitle": "Máquina"
+    }
+  },
+  "common": {
+    "error": "Error",
+    "select_placeholder": "Seleccionar..."
+  }
+}
