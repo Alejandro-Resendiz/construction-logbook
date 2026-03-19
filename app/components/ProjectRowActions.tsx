@@ -26,10 +26,10 @@ export default function ProjectRowActions({ project, dict }: ProjectRowActionsPr
     const res = await updateProject(project.project_id, formData)
     if (res.success && res.project) {
       updateLocalProject(project.project_id, res.project)
-      toast.success('Proyecto actualizado correctamente')
+      toast.success(dict.common.notifications?.success_update || 'Actualizado correctamente')
       setIsOpen(false)
     } else {
-      toast.error('Error al actualizar proyecto')
+      toast.error(dict.common.notifications?.error_update || 'Error al actualizar')
     }
     setLoading(false)
   }
@@ -40,9 +40,9 @@ export default function ProjectRowActions({ project, dict }: ProjectRowActionsPr
       const res = await deleteProject(project.project_id)
       if (res.success) {
         removeProject(project.project_id)
-        toast.success('Proyecto eliminado')
+        toast.success(dict.common.notifications?.success_delete || 'Eliminado correctamente')
       } else {
-        toast.error('Error al eliminar proyecto')
+        toast.error(dict.common.notifications?.error_delete || 'Error al eliminar')
       }
       setLoading(false)
     }

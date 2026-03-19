@@ -35,10 +35,10 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
     const res = await updateMachinery(machine.machinery_id, formData)
     if (res.success && res.machine) {
       updateLocalMachine(machine.machinery_id, res.machine)
-      toast.success('Maquinaria actualizada correctamente')
+      toast.success(dict.common.notifications?.success_update || 'Actualizado correctamente')
       setIsEditing(false)
     } else {
-      toast.error('Error al actualizar maquinaria')
+      toast.error(dict.common.notifications?.error_update || 'Error al actualizar')
     }
     setLoading(false)
   }
@@ -49,9 +49,9 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
       const res = await deleteMachinery(machine.machinery_id)
       if (res.success) {
         removeMachine(machine.machinery_id)
-        toast.success('Maquinaria eliminada')
+        toast.success(dict.common.notifications?.success_delete || 'Eliminado correctamente')
       } else {
-        toast.error('Error al eliminar maquinaria')
+        toast.error(dict.common.notifications?.error_delete || 'Error al eliminar')
       }
       setLoading(false)
     }

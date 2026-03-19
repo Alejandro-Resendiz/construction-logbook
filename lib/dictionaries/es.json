@@ -120,6 +120,13 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "edit": "Editar",
-    "delete": "Eliminar"
-  }
+    "delete": "Eliminar",
+    "notifications": {
+      "success_update": "Actualizado correctamente",
+      "success_delete": "Eliminado correctamente",
+      "error_update": "Error al actualizar",
+      "error_delete": "Error al eliminar",
+      "max_range_error": "El rango máximo es de 7 días."
+    }
+  },
 }

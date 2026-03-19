@@ -66,7 +66,7 @@ export default function AdminDashboardClient({ machinery, dict, common }: AdminD
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays > 7) {
-      toast.error('El rango máximo es de 7 días.')
+      toast.error(common.notifications?.max_range_error || 'El rango máximo es de 7 días.')
       return
     }
 
