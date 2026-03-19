@@ -91,19 +91,38 @@ export default function AdminDashboardClient({ machinery, dict, common }: AdminD
       body: tableRows,
       startY: 30,
       theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-      styles: { fontSize: 8 }
+      headStyles: { fillColor: "#FFC500", textColor: 0 },
+      styles: { fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 20 },
+        1: { overflow: 'linebreak' },
+        2: { overflow: 'linebreak' },
+        3: { cellWidth: 18 },
+        4: { cellWidth: 18 },
+        5: { cellWidth: 21, overflow: 'linebreak' },
+        6: { overflow: 'linebreak' },
+        7: { cellWidth: 30 }
+      }
     })
 
     // Signatures at bottom
     // @ts-ignore
     const finalY = doc.lastAutoTable.finalY + 30
-    doc.line(20, finalY, 80, finalY)
-    doc.setFontSize(8) // Decreased font size for signature fields
-    doc.text(dict.signatures.operator, 35, finalY + 5)
     
-    doc.line(120, finalY, 180, finalY)
-    doc.text(dict.signatures.admin, 135, finalY + 5)
+    // Line 1: Operator
+    const line1Start = 20
+    const line1End = 80
+    const line1Center = line1Start + (line1End - line1Start) / 2
+    doc.line(line1Start, finalY, line1End, finalY)
+    doc.setFontSize(8)
+    doc.text(dict.signatures.operator, line1Center, finalY + 5, { align: 'center' })
+    
+    // Line 2: Admin
+    const line2Start = 120
+    const line2End = 180
+    const line2Center = line2Start + (line2End - line2Start) / 2
+    doc.line(line2Start, finalY, line2End, finalY)
+    doc.text(dict.signatures.admin, line2Center, finalY + 5, { align: 'center' })
 
     doc.save(`Reporte_${machineName}_${format(new Date(), 'yyyy-MM-dd')}.pdf`)
   }
