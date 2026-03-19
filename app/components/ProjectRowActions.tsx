@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Edit2, Trash2, Check, X } from 'lucide-react'
 import { updateProject, deleteProject } from '@/app/admin/projects/actions'
 import { useProjectsStore } from '@/lib/store/projectsStore'
+import { toast } from 'sonner'
 
 interface ProjectRowActionsProps {
   project: any
@@ -25,7 +26,10 @@ export default function ProjectRowActions({ project, dict }: ProjectRowActionsPr
     const res = await updateProject(project.project_id, formData)
     if (res.success && res.project) {
       updateLocalProject(project.project_id, res.project)
+      toast.success('Proyecto actualizado correctamente')
       setIsOpen(false)
+    } else {
+      toast.error('Error al actualizar proyecto')
     }
     setLoading(false)
   }
@@ -36,6 +40,9 @@ export default function ProjectRowActions({ project, dict }: ProjectRowActionsPr
       const res = await deleteProject(project.project_id)
       if (res.success) {
         removeProject(project.project_id)
+        toast.success('Proyecto eliminado')
+      } else {
+        toast.error('Error al eliminar proyecto')
       }
       setLoading(false)
     }

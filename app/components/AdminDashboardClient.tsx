@@ -9,6 +9,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
+import { toast } from 'sonner'
 
 interface AdminDashboardClientProps {
   machinery: any[]
@@ -65,7 +66,7 @@ export default function AdminDashboardClient({ machinery, dict, common }: AdminD
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays > 7) {
-      alert('El rango máximo es de 7 días.')
+      toast.error('El rango máximo es de 7 días.')
       return
     }
 

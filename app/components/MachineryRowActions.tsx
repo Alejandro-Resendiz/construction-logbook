@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Edit2, Trash2, Check, X, Save } from 'lucide-react'
 import { updateMachinery, deleteMachinery } from '@/app/admin/machinery/actions'
 import { useMachineryStore } from '@/lib/store/machineryStore'
+import { toast } from 'sonner'
 
 interface MachineryRowActionsProps {
   machine: any
@@ -34,7 +35,10 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
     const res = await updateMachinery(machine.machinery_id, formData)
     if (res.success && res.machine) {
       updateLocalMachine(machine.machinery_id, res.machine)
+      toast.success('Maquinaria actualizada correctamente')
       setIsEditing(false)
+    } else {
+      toast.error('Error al actualizar maquinaria')
     }
     setLoading(false)
   }
@@ -45,6 +49,9 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
       const res = await deleteMachinery(machine.machinery_id)
       if (res.success) {
         removeMachine(machine.machinery_id)
+        toast.success('Maquinaria eliminada')
+      } else {
+        toast.error('Error al eliminar maquinaria')
       }
       setLoading(false)
     }
