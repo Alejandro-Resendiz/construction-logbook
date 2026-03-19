@@ -19,7 +19,7 @@
     "operator_name": "Nombre del Operador",
     "operator_placeholder": "Juan Perez",
     "start_time": "Hora de Inicio",
-    "fuel_liters": "Combustible (Litros)",
+    "fuel_liters": "Carga de Combustible (Litros)",
     "fuel_placeholder": "0.00",
     "submit": "Registrar Inicio",
     "submitting": "Registrando...",
@@ -38,7 +38,7 @@
     "machinery": "Maquinaria",
     "project": "Proyecto",
     "start_time": "Hora de Inicio",
-    "fuel_liters": "Combustible (Lts)",
+    "fuel_liters": "Carga de Combustible (Litros)",
     "already_completed": "Ya está actualizado, contacta a tu administrador.",
     "end_time": "Hora de Salida",
     "observations": "Observaciones",
@@ -128,5 +128,5 @@
       "error_delete": "Error al eliminar",
       "max_range_error": "El rango máximo es de 7 días."
     }
-  },
+  }
 }
