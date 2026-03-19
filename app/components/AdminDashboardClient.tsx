@@ -55,7 +55,7 @@ export default function AdminDashboardClient({ machinery, dict, common }: AdminD
 
   const exportPDF = () => {
     const doc = new jsPDF()
-    const machineName = machinery.find(m => m.machinery_id.toString() === selectedMachine)?.machinery_name
+    const machineName = machinery.find(m => m.machinery_id.toString() === selectedMachine)?.machinery_full_name
     
     // Header
     doc.setFontSize(18)
@@ -119,7 +119,7 @@ export default function AdminDashboardClient({ machinery, dict, common }: AdminD
             className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
           >
             <option value="">{common.select_placeholder}</option>
-            {machinery.map(m => <option key={m.machinery_id} value={m.machinery_id}>{m.machinery_name}</option>)}
+            {machinery.map(m => <option key={m.machinery_id} value={m.machinery_id}>{m.machinery_full_name}</option>)}
           </select>
         </div>
         <div>

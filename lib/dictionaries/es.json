@@ -4,6 +4,8 @@
     "update_log": "Finalizar Turno",
     "admin_dashboard": "Panel Admin",
     "admin_correction": "Corrección",
+    "manage_projects": "Proyectos",
+    "manage_machinery": "Maquinaria",
     "login": "Login Admin"
   },
   "new_log": {
@@ -75,23 +77,49 @@
       "signature": "Firma del Operador"
     },
     "signatures": {
-      "operator": "Nombre y firma de responsable de lubricantes",
-      "admin": "Nombre y firma de responsable de maquinaria"
+      "operator": "Firma Operador",
+      "admin": "Firma Admin / Supervisor"
     },
     "correction": {
-      "title": "Cierre de turno",
+      "title": "Corrección Administrativa",
       "success": "Registro Corregido!",
       "save_button": "Guardar Corrección",
       "cancel": "Cancelar",
       "back_to_panel": "Volver al Panel"
     },
     "pdf": {
-      "report_title": "Bitácora de Maquinaria",
-      "machine_subtitle": "Máquina"
+      "report_title": "Reporte de bitacora de obra",
+      "machine_subtitle": "Maquinaria"
+    },
+    "projects": {
+      "title": "Gestión de Proyectos",
+      "new_project": "Nuevo Proyecto",
+      "project_name": "Nombre del Proyecto",
+      "create": "Crear Proyecto",
+      "update": "Actualizar Proyecto",
+      "creating": "Creando...",
+      "no_projects": "No hay proyectos registrados."
+    },
+    "machinery": {
+      "title": "Gestión de Maquinaria",
+      "new_machine": "Nueva Maquinaria",
+      "external_code": "Código",
+      "full_name": "Maquinaria",
+      "short_name": "Máquina",
+      "model": "Modelo",
+      "serial_code": "Serie",
+      "create": "Registrar Maquina",
+      "update": "Actualizar Maquina",
+      "creating": "Registrando...",
+      "no_machinery": "No hay maquinaria registrada."
     }
   },
   "common": {
     "error": "Error",
-    "select_placeholder": "Seleccionar..."
+    "select_placeholder": "Seleccionar...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar"
   }
 }

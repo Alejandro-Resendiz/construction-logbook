@@ -4,7 +4,11 @@ CREATE EXTENSION IF NOT EXISTS pg_hashids;
 -- Machinery table
 CREATE TABLE IF NOT EXISTS machinery (
     machinery_id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    machinery_name TEXT NOT NULL,
+    external_code TEXT NOT NULL,
+    machinery_full_name TEXT NOT NULL,
+    machinery_name TEXT,
+    machinery_model TEXT,
+    machinery_serial_code TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

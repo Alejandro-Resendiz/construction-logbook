@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createMachineryLog } from '@/app/actions'
 
 interface MachineryLogFormProps {
-  machinery: { machinery_id: number, machinery_name: string }[]
+  machinery: { machinery_id: number, machinery_full_name: string }[]
   projects: { project_id: number, project_name: string }[]
   dict: any
 }
@@ -59,7 +59,7 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
         >
           <option value="">{dict.select_machinery}</option>
           {machinery.map((m) => (
-            <option key={m.machinery_id} value={m.machinery_id}>{m.machinery_name}</option>
+            <option key={m.machinery_id} value={m.machinery_id}>{m.machinery_full_name}</option>
           ))}
         </select>
       </div>
