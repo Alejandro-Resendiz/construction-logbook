@@ -25,7 +25,7 @@ export default function Navbar({ dict }: NavbarProps) {
   const isAdminRoute = pathname.startsWith('/admin')
   const isOperatorRoute = pathname === '/' || pathname.startsWith('/log')
 
-  const navLinks = isAdminRoute || user 
+  const navLinks = user 
     ? [
         { name: dict.nav.admin_dashboard, href: '/admin' },
         { name: dict.nav.admin_correction, href: '/admin/log/update' },
