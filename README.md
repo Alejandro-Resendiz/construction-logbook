@@ -1,67 +1,68 @@
 # HIV Logbook
 
-Next.js application for machinery logging using Supabase.
+Professional machinery logging and reporting platform built with Next.js 16 and Supabase.
 
-## Tech Stack
-- **Framework:** Next.js 16 (App Router)
-- **Database/Auth:** Supabase (`@supabase/ssr`)
-- **Styling:** Tailwind CSS 4
-- **Language:** TypeScript
-- **PDF Generation:** `jspdf` + `jspdf-autotable`
+## 🚀 Key Features
 
-## Getting Started
+### 🚜 Operator Logging (Public)
+- **Start Shift**: Capture machine, project, date, and initial fuel.
+- **Secure Hashing**: Generates unique 6-character hex codes for private shift updates.
+- **End Shift**: Simple verification view where operators confirm details and record end times/observations.
 
-### 1. Clone the repository
-```bash
-git clone <repo-url>
-cd hiv-logbook
-```
+### 📊 Admin Dashboard (Protected)
+- **Weekly Reporting**: Automated filtering for the current week or custom date ranges (max 7 days).
+- **Professional PDF Export**: Signature-ready reports with centered branding and specialized column formatting.
+- **Smart Excel Export**: Advanced `.xlsx` generation that clones styles from a master template (borders, fonts, logos).
+- **Administrative Correction**: Override and fix any shift record with an automated audit trail.
 
-### 2. Install dependencies
-```bash
-npm install
-```
+### 🛠️ Management & CRUD
+- **Projects & Machinery**: Dedicated management interfaces for Site Admins.
+- **Expanded Row Editing**: High-density forms that expand within the data table to prevent horizontal overflow.
+- **Collapsible Forms**: Streamlined UI that hides creation forms behind interactive toggles.
 
-### 3. Setup Supabase
-You need a Supabase project. Once created:
-1. **Enable Extension**: Enable the `pg_hashids` extension in your Supabase database (SQL Editor: `CREATE EXTENSION IF NOT EXISTS pg_hashids;`).
-2. **Environment Variables**: Copy `.env.local.example` to `.env.local` and fill in your credentials.
-3. **Migrations**: Run the contents of `supabase/migrations/initial_schema.sql` in the Supabase SQL Editor.
-4. **Seed Data**: Run the contents of `supabase/seed.sql` to populate initial machinery and projects.
+### 🔐 Security & Architecture
+- **RBAC**: Multi-role system (Admin, Resident, Operator) powered by Supabase RLS and JWT metadata.
+- **State Management**: Reactive UI powered by **Zustand** for instant, optimistic updates.
+- **Auth SSR**: Full session synchronization between Next.js Server Components and the browser via `@supabase/ssr`.
+- **Modern UX**: Professional notifications using **Sonner** and a mobile-first responsive design.
 
-### 4. Create Admin User
-Go to **Authentication > Users** in the Supabase Dashboard and manually create an admin user. Enable **"Auto-confirm"** to skip email verification.
+## 🛠️ Tech Stack
+- **Framework**: Next.js 16 (App Router)
+- **Database/Auth**: Supabase (`@supabase/ssr`)
+- **State**: Zustand
+- **Styling**: Tailwind CSS 4
+- **Language**: TypeScript
+- **Notifications**: Sonner
+- **Reporting**: `jspdf` & `exceljs`
 
-### 5. Run the development server
-```bash
-npm run dev
-```
+## 🏁 Getting Started
 
-## Deployment to Vercel
+### 1. Local Development Setup
+1.  **Install Dependencies**: `npm install`
+2.  **Start Supabase Local**: `npx supabase start`
+3.  **Environment Variables**: Copy `.env.local.example` to `.env.local` and use the local keys provided by the CLI.
+4.  **Reporting Templates**: Ensure your master Excel template exists at `public/templates/logbook_template.xlsx`.
+5.  **Run App**: `npm run dev`
 
-### 1. Push to GitHub
-Ensure your code is pushed to a GitHub repository (excluding `.env.local`).
+### 2. Database Synchronization (Automated)
+This project uses the Supabase CLI to manage database changes via migrations.
+- **Local Reset**: `npx supabase db reset` (Wipes local DB and applies all migrations + seed).
+- **Cloud Deployment**: `npx supabase db push` (Sends new migrations to your linked cloud project).
 
-### 2. Create Vercel Project
-1. Log in to [Vercel](https://vercel.com).
-2. Click **"New Project"** and import your repository.
+### 3. User Provisioning
+Admin and Resident users are managed via the Supabase Dashboard or local `seed.sql`.
+- Roles (`admin`, `resident`) must be stored in the user's `user_metadata`.
+- For production, manually create users in the Supabase Auth console and set the role metadata.
 
-### 3. Configure Environment Variables
-Add the following variables in the Vercel project settings:
-- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase Project URL.
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase Anon (public) key.
-- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase Service Role (secret) key.
+## 🚀 Deployment to Vercel
 
-### 4. Update Supabase Auth Settings
-To ensure redirects work correctly after login/logout in production:
-1. Go to **Authentication > URL Configuration** in Supabase.
-2. Set **Site URL** to your Vercel deployment URL (e.g., `https://your-app.vercel.app`).
-3. Add `https://your-app.vercel.app/**` to the **Redirect URLs** list.
+### 1. Configure Environment
+Add the following variables in your Vercel project settings:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (Secret - required for admin operations)
 
-## Features
-- **Public Operator Logging**: Start and End shift forms without login.
-- **Secure Hashed IDs**: 6-character hex codes for shift updates via `pg_hashids`.
-- **Admin Dashboard**: Protected view to filter weekly logs by machinery.
-- **PDF Export**: "Reporte de bitácora de obra" with operator and supervisor signature lines.
-- **Mobile First**: Fully responsive design for field use.
-- **Internationalization**: Full Spanish UI with English codebase abstractions.
+### 2. Update Auth Redirects
+In your Cloud Supabase Dashboard (**Authentication > URL Configuration**):
+1.  Set **Site URL** to your Vercel domain.
+2.  Add `https://your-domain.vercel.app/**` to **Redirect URLs**.

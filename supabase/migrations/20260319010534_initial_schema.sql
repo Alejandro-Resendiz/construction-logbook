@@ -68,13 +68,3 @@ CREATE POLICY "Public update logs by hash_id" ON machinery_logs
 
 -- Admin policies (assuming admin is authenticated)
 -- More restrictive admin policies can be added later as needed.
-
--- Explicitly grant access to the public schema and tables
-GRANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT SELECT ON TABLE machinery TO anon, authenticated;
-GRANT SELECT ON TABLE projects TO anon, authenticated;
-GRANT SELECT ON TABLE machinery_logs TO anon, authenticated;
-GRANT INSERT, UPDATE ON TABLE machinery_logs TO anon, authenticated;
-GRANT ALL ON TABLE machinery TO authenticated;
-GRANT ALL ON TABLE projects TO authenticated;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;

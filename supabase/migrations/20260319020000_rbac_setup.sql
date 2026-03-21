@@ -1,41 +1,59 @@
--- 1. Helper function to get role from JWT
+-- 1. Helper function to get role from JWT (Looking at user_metadata to match seed data)
 CREATE OR REPLACE FUNCTION public.get_my_role() 
 RETURNS text 
 LANGUAGE sql STABLE AS $$
-  SELECT coalesce(auth.jwt() -> 'app_metadata' ->> 'role', 'public');
+  SELECT coalesce(auth.jwt() -> 'user_metadata' ->> 'role', 'public');
 $$;
 
-GRANT EXECUTE ON FUNCTION public.get_my_role() TO authenticated, anon;
+-- 2. Consolidate Table Permissions (GRANTs)
+-- Ensuring standard roles have base access before RLS applies
 
--- 2. Update Projects Policies
-DROP POLICY IF EXISTS "Site admins can manage projects" ON projects;
-CREATE POLICY "Site admins can manage projects" ON projects
-    FOR ALL 
-    USING (public.get_my_role() = 'site_admin')
-    WITH CHECK (public.get_my_role() = 'site_admin');
+-- PUBLIC OPERATORS (anon)
+GRANT USAGE ON SCHEMA public TO anon;
+GRANT SELECT ON TABLE machinery TO anon;
+GRANT SELECT ON TABLE projects TO anon;
+GRANT INSERT, UPDATE ON TABLE machinery_logs TO anon;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
 
--- Allow everyone to see projects (needed for the log form)
+-- ADMINS & RESIDENTS (authenticated)
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT ALL ON TABLE machinery TO authenticated;
+GRANT ALL ON TABLE projects TO authenticated;
+GRANT ALL ON TABLE machinery_logs TO authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+-- SERVICE ROLE (The Master Key for Server Actions)
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+
+
+-- 3. RBAC Row Level Security Policies
+
+-- Projects: Everyone can see, only Admin can manage
 DROP POLICY IF EXISTS "Public select projects" ON projects;
 CREATE POLICY "Public select projects" ON projects FOR SELECT USING (true);
 
-
--- 3. Update Machinery Policies
-DROP POLICY IF EXISTS "Site admins can manage machinery" ON machinery;
-CREATE POLICY "Site admins can manage machinery" ON machinery
+DROP POLICY IF EXISTS "Admins can manage projects" ON projects;
+CREATE POLICY "Admins can manage projects" ON projects
     FOR ALL 
-    USING (public.get_my_role() = 'site_admin')
-    WITH CHECK (public.get_my_role() = 'site_admin');
+    USING (public.get_my_role() = 'admin')
+    WITH CHECK (public.get_my_role() = 'admin');
 
--- Allow everyone to see machinery (needed for the log form)
+
+-- Machinery: Everyone can see, only Admin can manage
 DROP POLICY IF EXISTS "Public select machinery" ON machinery;
 CREATE POLICY "Public select machinery" ON machinery FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Admins can manage machinery" ON machinery;
+CREATE POLICY "Admins can manage machinery" ON machinery
+    FOR ALL 
+    USING (public.get_my_role() = 'admin')
+    WITH CHECK (public.get_my_role() = 'admin');
 
--- 4. Secure Administrative Correction
--- Only residents or site_admins can update logs via the Admin flow
--- Note: The operator update still works via the "Public update logs by hash_id" policy
+
+-- Logs Correction: Admins and Residents only
 DROP POLICY IF EXISTS "Admins can correct logs" ON machinery_logs;
 CREATE POLICY "Admins can correct logs" ON machinery_logs
     FOR UPDATE
-    USING (public.get_my_role() IN ('resident', 'site_admin'))
-    WITH CHECK (public.get_my_role() IN ('resident', 'site_admin'));
+    USING (public.get_my_role() IN ('resident', 'admin'))
+    WITH CHECK (public.get_my_role() IN ('resident', 'admin'));
