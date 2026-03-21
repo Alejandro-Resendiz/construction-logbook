@@ -115,11 +115,11 @@ export default function AdminDashboardClient({ machinery, dict, common }: AdminD
       headStyles: { fillColor: "#FFC500", textColor: 0 },
       styles: { fontSize: 8 },
       columnStyles: {
-        0: { cellWidth: 20 },
+        0: { cellWidth: 18 },
         1: { overflow: 'linebreak' },
         2: { overflow: 'linebreak' },
-        3: { cellWidth: 18 },
-        4: { cellWidth: 18 },
+        3: { cellWidth: 15 },
+        4: { cellWidth: 15 },
         5: { cellWidth: 21, overflow: 'linebreak' },
         6: { overflow: 'linebreak' },
         7: { cellWidth: 30 }

@@ -19,7 +19,7 @@
     "operator_name": "Nombre del Operador",
     "operator_placeholder": "Juan Perez",
     "start_time": "Hora de Inicio",
-    "fuel_liters": "Combustible (Litros)",
+    "fuel_liters": "Carga de Combustible (Litros)",
     "fuel_placeholder": "0.00",
     "submit": "Registrar Inicio",
     "submitting": "Registrando...",
@@ -28,7 +28,7 @@
     "new_registration_button": "Nuevo Registro"
   },
   "update_log": {
-    "title": "Actualizar Salida",
+    "title": "Cierre de Turno",
     "hash_id_label": "Código de Registro",
     "hash_id_placeholder": "Ej: 012345",
     "search_button": "Buscar Registro",
@@ -38,7 +38,7 @@
     "machinery": "Maquinaria",
     "project": "Proyecto",
     "start_time": "Hora de Inicio",
-    "fuel_liters": "Combustible (Lts)",
+    "fuel_liters": "Carga de Combustible (Litros)",
     "already_completed": "Ya está actualizado, contacta a tu administrador.",
     "end_time": "Hora de Salida",
     "observations": "Observaciones",
@@ -70,26 +70,26 @@
       "date": "Fecha",
       "operator": "Operador",
       "project": "Proyecto",
-      "start": "Inicio",
-      "end": "Fin",
-      "fuel": "Lts",
+      "start": "Hora de Inicio",
+      "end": "Hora de Fin",
+      "fuel": "Carga de Combustible",
       "observations": "Observaciones",
       "signature": "Firma del Operador"
     },
     "signatures": {
-      "operator": "Firma Operador",
-      "admin": "Firma Admin / Supervisor"
+      "operator": "Nombre y firma de responsable de lubricantes",
+      "admin": "Nombre y firma de responsable de maquinaria"
     },
     "correction": {
-      "title": "Corrección Administrativa",
+      "title": "Corrección Cierre de Turno",
       "success": "Registro Corregido!",
       "save_button": "Guardar Corrección",
       "cancel": "Cancelar",
       "back_to_panel": "Volver al Panel"
     },
     "pdf": {
-      "report_title": "Reporte de bitacora de obra",
-      "machine_subtitle": "Maquinaria"
+      "report_title": "Bitácora de Maquinaria",
+      "machine_subtitle": "Maquina"
     },
     "projects": {
       "title": "Gestión de Proyectos",

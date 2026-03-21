@@ -185,7 +185,7 @@ export default function MachineryPage() {
                   <label className="text-xs font-bold text-gray-500 uppercase">{dict.admin.machinery.serial_code}</label>
                   <input type="text" name="machinery_serial_code" className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
-                <div className="space-y-1 md:col-span-3 lg:col-span-5">
+                <div className="space-y-1 md:col-span-3 lg:col-span-4">
                   <label className="text-xs font-bold text-gray-500 uppercase">{dict.update_log.observations}</label>
                   <input type="text" name="observations" className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
