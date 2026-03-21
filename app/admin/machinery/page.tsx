@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getDictionary } from '@/lib/i18n'
-import { Plus, X, Hammer } from 'lucide-react'
+import { Plus, X, Hammer, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { createMachinery } from './actions'
 import MachineryRowActions from '@/app/components/MachineryRowActions'
 import { useMachineryStore } from '@/lib/store/machineryStore'
@@ -12,6 +12,8 @@ export default function MachineryPage() {
   const [dict, setDict] = useState<any>(null)
   const [showForm, setShowForm] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'machinery_full_name', direction: 'asc' })
   
   // Use Zustand store
   const { machinery, loading, fetchMachinery, addMachine } = useMachineryStore()
@@ -20,6 +22,44 @@ export default function MachineryPage() {
     setDict(getDictionary('es'))
     fetchMachinery()
   }, [fetchMachinery])
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc'
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc'
+    }
+    setSortConfig({ key, direction })
+  }
+
+  const getSortIcon = (key: string) => {
+    if (sortConfig.key !== key) return <ArrowUpDown size={14} className="text-gray-400" />
+    return sortConfig.direction === 'asc' ? <ArrowUp size={14} className="text-blue-600" /> : <ArrowDown size={14} className="text-blue-600" />
+  }
+
+  // Filter and Sort Logic
+  const filteredMachinery = machinery
+    .filter(m => {
+      const search = searchQuery.toLowerCase()
+      return (
+        m.external_code?.toLowerCase().includes(search) ||
+        m.machinery_full_name?.toLowerCase().includes(search) ||
+        m.machinery_name?.toLowerCase().includes(search) ||
+        m.machinery_model?.toLowerCase().includes(search) ||
+        m.machinery_serial_code?.toLowerCase().includes(search)
+      )
+    })
+    .sort((a, b) => {
+      if (!sortConfig.key || !sortConfig.direction) return 0
+      
+      const valA = a[sortConfig.key] || ''
+      const valB = b[sortConfig.key] || ''
+      
+      if (sortConfig.direction === 'asc') {
+        return valA.toString().localeCompare(valB.toString())
+      } else {
+        return valB.toString().localeCompare(valA.toString())
+      }
+    })
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -79,6 +119,20 @@ export default function MachineryPage() {
           </button>
         </header>
 
+        {/* Search Bar */}
+        <div className="relative mb-6">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar por código, nombre, modelo o serie..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl leading-5 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm transition-all shadow-sm"
+          />
+        </div>
+
         {/* Collapsible Creation Form */}
         {showForm && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100 mb-8 animate-in fade-in slide-in-from-top-4 duration-200">
@@ -131,7 +185,7 @@ export default function MachineryPage() {
                   <label className="text-xs font-bold text-gray-500 uppercase">{dict.admin.machinery.serial_code}</label>
                   <input type="text" name="machinery_serial_code" className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
-                <div className="space-y-1 md:col-span-3 lg:col-span-4">
+                <div className="space-y-1 md:col-span-3 lg:col-span-5">
                   <label className="text-xs font-bold text-gray-500 uppercase">{dict.update_log.observations}</label>
                   <input type="text" name="observations" className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
                 </div>
@@ -151,14 +205,39 @@ export default function MachineryPage() {
         {/* Machinery List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="p-4 font-semibold text-gray-600">{dict.admin.machinery.external_code}</th>
-                  <th className="p-4 font-semibold text-gray-600">{dict.admin.machinery.full_name}</th>
-                  <th className="p-4 font-semibold text-gray-600">{dict.admin.machinery.short_name}</th>
-                  <th className="p-4 font-semibold text-gray-600">{dict.admin.machinery.model}</th>
-                  <th className="p-4 font-semibold text-gray-600">{dict.admin.machinery.serial_code}</th>
+                  <th onClick={() => handleSort('external_code')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
+                    <div className="flex items-center gap-2">
+                      {dict.admin.machinery.external_code}
+                      {getSortIcon('external_code')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('machinery_full_name')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
+                    <div className="flex items-center gap-2">
+                      {dict.admin.machinery.full_name}
+                      {getSortIcon('machinery_full_name')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('machinery_name')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
+                    <div className="flex items-center gap-2">
+                      {dict.admin.machinery.short_name}
+                      {getSortIcon('machinery_name')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('machinery_model')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
+                    <div className="flex items-center gap-2">
+                      {dict.admin.machinery.model}
+                      {getSortIcon('machinery_model')}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort('machinery_serial_code')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
+                    <div className="flex items-center gap-2">
+                      {dict.admin.machinery.serial_code}
+                      {getSortIcon('machinery_serial_code')}
+                    </div>
+                  </th>
                   <th className="p-4 font-semibold text-gray-600">{dict.update_log.observations}</th>
                   <th className="p-4 text-right"></th>
                 </tr>
@@ -166,14 +245,14 @@ export default function MachineryPage() {
               <tbody className="text-gray-900">
                 {loading ? (
                   <tr><td colSpan={7} className="p-8 text-center text-gray-400 italic">Cargando maquinaria...</td></tr>
-                ) : machinery.length === 0 ? (
+                ) : filteredMachinery.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-gray-400">
-                      {dict.admin.machinery.no_machinery}
+                    <td colSpan={7} className="p-8 text-center text-gray-400 italic">
+                      {searchQuery ? 'No se encontraron resultados' : dict.admin.machinery.no_machinery}
                     </td>
                   </tr>
                 ) : (
-                  machinery.map((m) => (
+                  filteredMachinery.map((m) => (
                     <MachineryRowActions 
                       key={m.machinery_id} 
                       machine={m} 
