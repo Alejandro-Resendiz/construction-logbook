@@ -29,7 +29,8 @@ export default function ProjectRowActions({ project, dict }: ProjectRowActionsPr
       toast.success(dict.common.notifications?.success_update || 'Actualizado correctamente')
       setIsOpen(false)
     } else {
-      toast.error(dict.common.notifications?.error_update || 'Error al actualizar')
+      const errorMsg = dict.common.notifications?.[res.error as string] || dict.common.notifications?.error_update || 'Error al actualizar'
+      toast.error(errorMsg)
     }
     setLoading(false)
   }

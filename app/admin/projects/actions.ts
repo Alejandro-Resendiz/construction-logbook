@@ -19,7 +19,10 @@ export async function createProject(formData: FormData) {
 
   if (error) {
     console.error('Error creating project:', error)
-    return { error: error.message }
+    if (error.code === '23505') {
+      return { error: 'DUPLICATE_PROJECT' }
+    }
+    return { error: 'GENERIC_ERROR' }
   }
 
   revalidatePath('/admin/projects')
@@ -38,7 +41,10 @@ export async function updateProject(project_id: number, formData: FormData) {
 
   if (error) {
     console.error('Error updating project:', error)
-    return { error: error.message }
+    if (error.code === '23505') {
+      return { error: 'DUPLICATE_PROJECT' }
+    }
+    return { error: 'GENERIC_ERROR' }
   }
 
   revalidatePath('/admin/projects')
@@ -53,7 +59,7 @@ export async function deleteProject(project_id: number) {
 
   if (error) {
     console.error('Error deleting project:', error)
-    return { error: error.message }
+    return { error: 'GENERIC_ERROR' }
   }
 
   revalidatePath('/admin/projects')

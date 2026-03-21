@@ -6,10 +6,12 @@ import { Plus, X, List } from 'lucide-react'
 import { createProject } from './actions'
 import ProjectRowActions from '@/app/components/ProjectRowActions'
 import { useProjectsStore } from '@/lib/store/projectsStore'
+import { toast } from 'sonner'
 
 export default function ProjectsPage() {
   const [dict, setDict] = useState<any>(null)
   const [showForm, setShowForm] = useState(false)
+  const [errors, setErrors] = useState<string[]>([])
   
   // Use Zustand store
   const { projects, loading, fetchProjects, addProject } = useProjectsStore()
@@ -18,6 +20,29 @@ export default function ProjectsPage() {
     setDict(getDictionary('es'))
     fetchProjects()
   }, [fetchProjects])
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const projectName = formData.get('project_name')
+
+    if (!projectName) {
+      setErrors(['project_name'])
+      toast.error(dict.common.notifications?.missing_fields || 'Por favor ingrese el nombre del proyecto.')
+      return
+    }
+
+    setErrors([])
+    const res = await createProject(formData)
+    if (res.success && res.project) {
+      addProject(res.project) // Update local store
+      toast.success(dict.common.notifications?.success_update || 'Proyecto creado')
+      setShowForm(false)
+    } else {
+      const errorMsg = dict.common.notifications?.[res.error as string] || dict.common.notifications?.generic_error || 'Error al crear'
+      toast.error(errorMsg)
+    }
+  }
 
   if (!dict) return <div className="p-8 text-center text-gray-500 italic">Cargando...</div>
 
@@ -30,7 +55,10 @@ export default function ProjectsPage() {
             {dict.admin.projects.title}
           </h1>
           <button 
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              setShowForm(!showForm)
+              setErrors([])
+            }}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
               showForm 
                 ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
@@ -48,27 +76,18 @@ export default function ProjectsPage() {
             <h2 className="text-lg font-semibold mb-4 text-gray-900">
               {dict.admin.projects.new_project}
             </h2>
-            <form 
-              onSubmit={async (e) => {
-                e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                const res = await createProject(formData)
-                if (res.success && res.project) {
-                  addProject(res.project) // Update local store
-                  setShowForm(false)
-                }
-              }} 
-              className="flex flex-col md:flex-row gap-4 items-end"
-            >
+            <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-end">
               <div className="flex-1 w-full">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
                   {dict.admin.projects.project_name}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input 
                   type="text" 
                   name="project_name" 
-                  required 
-                  className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full p-2 border rounded-lg text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+                    errors.includes('project_name') ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
                   autoFocus
                 />
               </div>

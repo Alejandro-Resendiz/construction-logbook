@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit2, Trash2, Check, X, Save } from 'lucide-react'
+import { Edit2, Trash2, X, Save } from 'lucide-react'
 import { updateMachinery, deleteMachinery } from '@/app/admin/machinery/actions'
 import { useMachineryStore } from '@/lib/store/machineryStore'
 import { toast } from 'sonner'
@@ -18,6 +18,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   const [shortName, setShortName] = useState(machine.machinery_name || '')
   const [model, setModel] = useState(machine.machinery_model || '')
   const [serialCode, setSerialCode] = useState(machine.machinery_serial_code || '')
+  const [observations, setObservations] = useState(machine.observations || '')
   const [loading, setLoading] = useState(false)
 
   // Use Zustand store actions
@@ -31,6 +32,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
     formData.append('machinery_name', shortName)
     formData.append('machinery_model', model)
     formData.append('machinery_serial_code', serialCode)
+    formData.append('observations', observations)
     
     const res = await updateMachinery(machine.machinery_id, formData)
     if (res.success && res.machine) {
@@ -38,7 +40,8 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
       toast.success(dict.common.notifications?.success_update || 'Actualizado correctamente')
       setIsEditing(false)
     } else {
-      toast.error(dict.common.notifications?.error_update || 'Error al actualizar')
+      const errorMsg = dict.common.notifications?.[res.error as string] || dict.common.notifications?.error_update || 'Error al actualizar'
+      toast.error(errorMsg)
     }
     setLoading(false)
   }
@@ -60,7 +63,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   if (isEditing) {
     return (
       <tr className="bg-blue-50 border-b border-blue-100">
-        <td colSpan={6} className="p-6">
+        <td colSpan={7} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-blue-600 uppercase">{dict.admin.machinery.external_code}</label>
@@ -97,6 +100,13 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
                 className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
               />
             </div>
+            <div className="space-y-1 md:col-span-3">
+              <label className="text-[10px] font-bold text-blue-600 uppercase">{dict.update_log.observations}</label>
+              <input 
+                type="text" value={observations} onChange={(e) => setObservations(e.target.value)} 
+                className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+              />
+            </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button 
@@ -128,6 +138,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
       <td className="p-4 text-sm text-gray-600">{machine.machinery_name}</td>
       <td className="p-4 text-sm text-gray-600">{machine.machinery_model || '-'}</td>
       <td className="p-4 text-sm text-gray-600">{machine.machinery_serial_code || '-'}</td>
+      <td className="p-4 text-sm text-gray-500 italic max-w-xs truncate">{machine.observations || '-'}</td>
       <td className="p-4 text-right">
         <div className="flex justify-end gap-2">
           <button 

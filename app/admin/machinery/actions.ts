@@ -14,6 +14,7 @@ export async function createMachinery(formData: FormData) {
   const machinery_name = formData.get('machinery_name') as string
   const machinery_model = formData.get('machinery_model') as string
   const machinery_serial_code = formData.get('machinery_serial_code') as string
+  const observations = formData.get('observations') as string
 
   const { data, error } = await supabaseAdmin
     .from('machinery')
@@ -22,14 +23,21 @@ export async function createMachinery(formData: FormData) {
       machinery_full_name, 
       machinery_name, 
       machinery_model, 
-      machinery_serial_code 
+      machinery_serial_code,
+      observations
     }])
     .select()
     .single()
 
   if (error) {
     console.error('Error creating machinery:', error)
-    return { error: error.message }
+    if (error.code === '23505') {
+      if (error.message.includes('external_code')) {
+        return { error: 'DUPLICATE_EXTERNAL_CODE' }
+      }
+      return { error: 'DUPLICATE_IDENTITY' }
+    }
+    return { error: 'GENERIC_ERROR' }
   }
 
   revalidatePath('/admin/machinery')
@@ -42,6 +50,7 @@ export async function updateMachinery(machinery_id: number, formData: FormData) 
   const machinery_name = formData.get('machinery_name') as string
   const machinery_model = formData.get('machinery_model') as string
   const machinery_serial_code = formData.get('machinery_serial_code') as string
+  const observations = formData.get('observations') as string
 
   const { data, error } = await supabaseAdmin
     .from('machinery')
@@ -50,7 +59,8 @@ export async function updateMachinery(machinery_id: number, formData: FormData) 
       machinery_full_name, 
       machinery_name, 
       machinery_model, 
-      machinery_serial_code 
+      machinery_serial_code,
+      observations
     })
     .eq('machinery_id', machinery_id)
     .select()
@@ -58,7 +68,13 @@ export async function updateMachinery(machinery_id: number, formData: FormData) 
 
   if (error) {
     console.error('Error updating machinery:', error)
-    return { error: error.message }
+    if (error.code === '23505') {
+      if (error.message.includes('external_code')) {
+        return { error: 'DUPLICATE_EXTERNAL_CODE' }
+      }
+      return { error: 'DUPLICATE_IDENTITY' }
+    }
+    return { error: 'GENERIC_ERROR' }
   }
 
   revalidatePath('/admin/machinery')
@@ -73,7 +89,7 @@ export async function deleteMachinery(machinery_id: number) {
 
   if (error) {
     console.error('Error deleting machinery:', error)
-    return { error: error.message }
+    return { error: 'GENERIC_ERROR' }
   }
 
   revalidatePath('/admin/machinery')

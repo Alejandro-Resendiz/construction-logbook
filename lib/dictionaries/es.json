@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "Inicio",
-    "update_log": "Cierre de Turno",
+    "update_log": "Finalizar Turno",
     "admin_dashboard": "Panel Admin",
     "admin_correction": "Corrección",
     "manage_projects": "Proyectos",
@@ -19,7 +19,7 @@
     "operator_name": "Nombre del Operador",
     "operator_placeholder": "Juan Perez",
     "start_time": "Hora de Inicio",
-    "fuel_liters": "Carga de Combustible (Litros)",
+    "fuel_liters": "Combustible (Litros)",
     "fuel_placeholder": "0.00",
     "submit": "Registrar Inicio",
     "submitting": "Registrando...",
@@ -38,7 +38,7 @@
     "machinery": "Maquinaria",
     "project": "Proyecto",
     "start_time": "Hora de Inicio",
-    "fuel_liters": "Carga de Combustible (Litros)",
+    "fuel_liters": "Combustible (Lts)",
     "already_completed": "Ya está actualizado, contacta a tu administrador.",
     "end_time": "Hora de Salida",
     "observations": "Observaciones",
@@ -70,26 +70,26 @@
       "date": "Fecha",
       "operator": "Operador",
       "project": "Proyecto",
-      "start": "Hora Inicio",
-      "end": "Hora Fin",
-      "fuel": "Carga de\nCombustible",
+      "start": "Inicio",
+      "end": "Fin",
+      "fuel": "Lts",
       "observations": "Observaciones",
-      "signature": "Firma"
+      "signature": "Firma del Operador"
     },
     "signatures": {
-      "operator": "Nombre y firma de responsable de lubricantes",
-      "admin": "Nombre y firma de responsable de maquinaria"
+      "operator": "Firma Operador",
+      "admin": "Firma Admin / Supervisor"
     },
     "correction": {
-      "title": "Corrección Cierre de Turno",
+      "title": "Corrección Administrativa",
       "success": "Registro Corregido!",
       "save_button": "Guardar Corrección",
       "cancel": "Cancelar",
       "back_to_panel": "Volver al Panel"
     },
     "pdf": {
-      "report_title": "Bitácora de Maquinaria",
-      "machine_subtitle": "Máquina"
+      "report_title": "Reporte de bitacora de obra",
+      "machine_subtitle": "Maquinaria"
     },
     "projects": {
       "title": "Gestión de Proyectos",
@@ -126,7 +126,14 @@
       "success_delete": "Eliminado correctamente",
       "error_update": "Error al actualizar",
       "error_delete": "Error al eliminar",
-      "max_range_error": "El rango máximo es de 7 días."
+      "max_range_error": "El rango máximo es de 7 días.",
+      "missing_fields": "Por favor complete los campos obligatorios.",
+      "duplicate_error": "Este registro ya existe (duplicado).",
+      "generic_error": "Ha ocurrido un error inesperado.",
+      "DUPLICATE_PROJECT": "Este proyecto ya existe (Nombre duplicado).",
+      "DUPLICATE_EXTERNAL_CODE": "Ya existe una máquina con este Código.",
+      "DUPLICATE_IDENTITY": "Esta máquina ya existe (Nombre, Modelo y Serie duplicados).",
+      "GENERIC_ERROR": "Ha ocurrido un error en el servidor."
     }
   }
 }
