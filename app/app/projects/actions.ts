@@ -25,7 +25,7 @@ export async function createProject(formData: FormData) {
     return { error: 'GENERIC_ERROR' }
   }
 
-  revalidatePath('/admin/projects')
+  revalidatePath('/app/projects')
   return { success: true, project: data }
 }
 
@@ -47,7 +47,7 @@ export async function updateProject(project_id: number, formData: FormData) {
     return { error: 'GENERIC_ERROR' }
   }
 
-  revalidatePath('/admin/projects')
+  revalidatePath('/app/projects')
   return { success: true, project: data }
 }
 
@@ -62,6 +62,6 @@ export async function deleteProject(project_id: number) {
     return { error: 'GENERIC_ERROR' }
   }
 
-  revalidatePath('/admin/projects')
+  revalidatePath('/app/projects')
   return { success: true }
 }

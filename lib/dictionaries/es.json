@@ -2,8 +2,9 @@
   "nav": {
     "home": "Inicio",
     "update_log": "Finalizar Turno",
-    "admin_dashboard": "Panel Admin",
-    "admin_correction": "Corrección",
+    "admin_dashboard": "Tablero",
+    "machinery_logbook": "Bitácora de Maquinaria",
+    "admin_correction": "Corrección Turno",
     "manage_projects": "Proyectos",
     "manage_machinery": "Maquinaria",
     "login": "Login Admin"
@@ -58,7 +59,8 @@
     "login_button": "Iniciar Sesión",
     "logging_in": "Iniciando sesión...",
     "login_error": "Credenciales inválidas",
-    "dashboard_title": "Reporte Semanal",
+    "dashboard_title": "Bitácora de Maquinaria",
+    "tablero_title": "Tablero de Control",
     "logout": "Cerrar Sesión",
     "select_project": "Filtrar por Proyecto",
     "select_machine": "Filtrar por Maquina",

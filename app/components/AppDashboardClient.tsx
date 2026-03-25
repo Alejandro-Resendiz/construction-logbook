@@ -11,13 +11,13 @@ import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { toast } from 'sonner'
 
-interface AdminDashboardClientProps {
+interface AppDashboardClientProps {
   machinery: any[]
   dict: any
   common: any
 }
 
-export default function AdminDashboardClient({ machinery, dict, common }: AdminDashboardClientProps) {
+export default function AppDashboardClient({ machinery, dict, common }: AppDashboardClientProps) {
   const [selectedMachine, setSelectedMachine] = useState('')
   const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'))

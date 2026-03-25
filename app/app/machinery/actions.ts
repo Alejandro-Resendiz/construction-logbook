@@ -40,7 +40,7 @@ export async function createMachinery(formData: FormData) {
     return { error: 'GENERIC_ERROR' }
   }
 
-  revalidatePath('/admin/machinery')
+  revalidatePath('/app/machinery')
   return { success: true, machine: data }
 }
 
@@ -77,7 +77,7 @@ export async function updateMachinery(machinery_id: number, formData: FormData) 
     return { error: 'GENERIC_ERROR' }
   }
 
-  revalidatePath('/admin/machinery')
+  revalidatePath('/app/machinery')
   return { success: true, machine: data }
 }
 
@@ -92,6 +92,6 @@ export async function deleteMachinery(machinery_id: number) {
     return { error: 'GENERIC_ERROR' }
   }
 
-  revalidatePath('/admin/machinery')
+  revalidatePath('/app/machinery')
   return { success: true }
 }

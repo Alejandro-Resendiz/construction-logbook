@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Edit2, Trash2, Check, X } from 'lucide-react'
-import { updateProject, deleteProject } from '@/app/admin/projects/actions'
+import { updateProject, deleteProject } from '@/app/app/projects/actions'
 import { useProjectsStore } from '@/lib/store/projectsStore'
 import { toast } from 'sonner'
 

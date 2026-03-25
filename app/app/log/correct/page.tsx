@@ -1,5 +1,5 @@
 import { getDictionary } from '@/lib/i18n'
-import AdminUpdateLogForm from '@/app/components/AdminUpdateLogForm'
+import CorrectionLogForm from '@/app/components/CorrectionLogForm'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
@@ -19,7 +19,7 @@ export default async function AdminUpdateLogPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             {dict.admin.correction.title}
           </h1>
-          <AdminUpdateLogForm dict={dict.update_log} adminDict={dict.admin} />
+          <CorrectionLogForm dict={dict.update_log} adminDict={dict.admin} />
         </div>
       </div>
     </main>

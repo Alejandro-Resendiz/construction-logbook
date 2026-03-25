@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Edit2, Trash2, X, Save } from 'lucide-react'
-import { updateMachinery, deleteMachinery } from '@/app/admin/machinery/actions'
+import { updateMachinery, deleteMachinery } from '@/app/app/machinery/actions'
 import { useMachineryStore } from '@/lib/store/machineryStore'
 import { toast } from 'sonner'
 

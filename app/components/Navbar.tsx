@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Hammer, Shield, Settings, LogOut } from 'lucide-react'
+import { Menu, X, Hammer, ShieldCheck, Settings, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import LogoutButton from './LogoutButton'
 
@@ -33,7 +33,7 @@ export default function Navbar({ dict }: NavbarProps) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const isAdminRoute = pathname.startsWith('/admin')
+  const isAdminRoute = pathname.startsWith('/app')
   
   // Build dynamic navigation based on role
   let navLinks = []
@@ -41,15 +41,15 @@ export default function Navbar({ dict }: NavbarProps) {
   if (user) {
     // Basic authenticated links (Residents and Admins)
     navLinks = [
-      { name: dict.nav.admin_dashboard, href: '/admin' },
-      { name: dict.nav.admin_correction, href: '/admin/log/update' }
+      { name: dict.nav.admin_dashboard, href: '/app' },
+      { name: dict.nav.admin_correction, href: '/app/log/correct' }
     ]
 
     // Admin exclusive links (Site Admins)
     if (role === 'admin') {
       navLinks.push(
-        { name: dict.nav.manage_projects, href: '/admin/projects' },
-        { name: dict.nav.manage_machinery, href: '/admin/machinery' }
+        { name: dict.nav.manage_projects, href: '/app/projects' },
+        { name: dict.nav.manage_machinery, href: '/app/machinery' }
       )
     }
   } else {
@@ -74,7 +74,7 @@ export default function Navbar({ dict }: NavbarProps) {
 
           {/* Desktop Links */}
           <div className="hidden lg:flex items-center space-x-2">
-            {navLinks.map((link) => (
+            {!isAdminRoute && navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -87,13 +87,13 @@ export default function Navbar({ dict }: NavbarProps) {
                 {link.name}
               </Link>
             ))}
-            {user && (
+            {!isAdminRoute && user && (
               <div className="flex items-center gap-4 ml-4 pl-4 border-l border-gray-200">
                 <div className="flex items-center gap-2">
                   {role === 'admin' ? (
                     <Settings className="h-4 w-4 text-purple-500" />
                   ) : (
-                    <Shield className="h-4 w-4 text-orange-500" />
+                    <ShieldCheck className="h-4 w-4 text-orange-500" />
                   )}
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
                     {role ?? 'User'}
@@ -137,7 +137,7 @@ export default function Navbar({ dict }: NavbarProps) {
             {user && (
               <div className="pt-4 pb-2 border-t border-gray-100">
                 <div className="px-3 mb-2 flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-orange-500" />
+                  <ShieldCheck className="h-4 w-4 text-orange-500" />
                   <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
                     {role ?? 'User'}
                   </span>

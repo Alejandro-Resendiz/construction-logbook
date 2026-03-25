@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { getLogByHashId } from '@/app/log/update/actions'
-import { adminUpdateLog } from '@/app/admin/log/update/actions'
+import { adminUpdateLog } from '@/app/app/log/correct/actions'
 
-interface AdminUpdateLogFormProps {
+interface CorrectionLogFormProps {
   dict: any
   adminDict: any
 }
 
-export default function AdminUpdateLogForm({ dict, adminDict }: AdminUpdateLogFormProps) {
+export default function CorrectionLogForm({ dict, adminDict }: CorrectionLogFormProps) {
   const [hashId, setHashId] = useState('')
   const [log, setLog] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -41,7 +41,7 @@ export default function AdminUpdateLogForm({ dict, adminDict }: AdminUpdateLogFo
       <div className="text-center p-6 space-y-4">
         <div className="text-green-600 font-bold text-lg">{adminDict.correction.success}</div>
         <button 
-          onClick={() => window.location.href = '/admin'} 
+          onClick={() => window.location.href = '/app'} 
           className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700"
         >
           {adminDict.correction.back_to_panel}

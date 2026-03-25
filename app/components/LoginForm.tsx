@@ -31,7 +31,7 @@ export default function LoginForm({ dict }: LoginFormProps) {
     } else {
       // Small delay to ensure cookies are persisted
       setTimeout(() => {
-        router.push('/admin')
+        router.push('/app')
         router.refresh()
       }, 500)
     }
