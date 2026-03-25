@@ -1,4 +1,4 @@
--- 1. Helper function to get role from JWT (Looking at user_metadata to match seed data)
+-- 1. Helper function to get role from JWT
 CREATE OR REPLACE FUNCTION public.get_my_role() 
 RETURNS text 
 LANGUAGE sql STABLE AS $$
@@ -12,7 +12,7 @@ $$;
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT SELECT ON TABLE machinery TO anon;
 GRANT SELECT ON TABLE projects TO anon;
-GRANT INSERT, UPDATE ON TABLE machinery_logs TO anon;
+GRANT SELECT, INSERT, UPDATE ON TABLE machinery_logs TO anon;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon;
 
 -- ADMINS & RESIDENTS (authenticated)
