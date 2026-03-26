@@ -10,6 +10,7 @@ import autoTable from 'jspdf-autotable'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { toast } from 'sonner'
+import LogbookAnalytics from './LogbookAnalytics'
 
 interface AppDashboardClientProps {
   machinery: any[]
@@ -18,7 +19,9 @@ interface AppDashboardClientProps {
 }
 
 export default function AppDashboardClient({ machinery, dict, common }: AppDashboardClientProps) {
+  const [activeTab, setActiveTab] = useState<'table' | 'analytics'>('table')
   const [selectedMachine, setSelectedMachine] = useState('')
+  const [machineType, setMachineType] = useState<'all' | 'owned' | 'rented'>('all')
   const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [logs, setLogs] = useState<any[]>([])
@@ -27,35 +30,49 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
   const today = format(new Date(), 'yyyy-MM-dd')
 
   const fetchLogs = async () => {
-    if (!selectedMachine || !dateFrom || !dateTo) {
+    // For table tab, machine is usually required to avoid huge lists, 
+    // but for analytics we want fleet-wide data if none is selected.
+    if (activeTab === 'table' && !selectedMachine) {
       setLogs([])
       return
     }
     
     setLoading(true)
-    const { data, error } = await supabase
+    let query = supabase
       .from('machinery_logs')
       .select(`
         *,
         projects(project_name),
-        machinery(machinery_name, machinery_full_name)
+        machinery(machinery_name, machinery_full_name, external_code, is_rented)
       `)
-      .eq('machine_id', selectedMachine)
       .gte('date', dateFrom)
       .lte('date', dateTo)
-      .order('date', { ascending: true })
+
+    if (selectedMachine) {
+      query = query.eq('machine_id', selectedMachine)
+    }
+
+    const { data, error } = await query.order('date', { ascending: true })
 
     if (error) {
       console.error(error)
+      setLogs([])
     } else {
-      setLogs(data || [])
+      // Client-side filter for machine type (is_rented)
+      let filteredData = data || []
+      if (machineType === 'owned') {
+        filteredData = filteredData.filter(log => !log.machinery?.is_rented)
+      } else if (machineType === 'rented') {
+        filteredData = filteredData.filter(log => log.machinery?.is_rented)
+      }
+      setLogs(filteredData)
     }
     setLoading(false)
   }
 
   useEffect(() => {
     fetchLogs()
-  }, [selectedMachine, dateFrom, dateTo])
+  }, [selectedMachine, dateFrom, dateTo, machineType, activeTab])
 
   // Validation: Max 7 days
   const handleDateChange = (type: 'from' | 'to', value: string) => {
@@ -92,6 +109,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
       dict.columns.start,
       dict.columns.end,
       dict.columns.fuel,
+      dict.columns.fuel_price,
       dict.columns.observations,
       dict.columns.signature
     ]
@@ -103,6 +121,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
       log.start_time,
       log.end_time || '-',
       log.fuel_liters,
+      log.fuel_price || '-',
       log.observations || '',
       '' // Empty for signature
     ])
@@ -120,9 +139,10 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
         2: { overflow: 'linebreak' },
         3: { cellWidth: 15 },
         4: { cellWidth: 15 },
-        5: { cellWidth: 21, overflow: 'linebreak' },
-        6: { overflow: 'linebreak' },
-        7: { cellWidth: 30 }
+        5: { cellWidth: 20 },
+        6: { cellWidth: 15 },
+        7: { overflow: 'linebreak' },
+        8: { cellWidth: 25 }
       }
     })
 
@@ -182,7 +202,8 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
         log.start_time, // Col D: HORA INICIO
         log.end_time || '-', // Col E: HORA FIN
         log.fuel_liters, // Col F: CARGA DE COMBUSTIBLE
-        log.observations || '' // Col G: OBSERVACIONES
+        log.fuel_price || '-', // Col G: PRECIO COMBUSTIBLE
+        log.observations || '' // Col H: OBSERVACIONES
       ]
 
       // Set values and copy styles from templateRow cell by cell
@@ -209,18 +230,75 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
 
   return (
     <div className="space-y-6">
+      {/* Tab Switcher */}
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('table')}
+          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${
+            activeTab === 'table' 
+              ? 'border-blue-600 text-blue-600' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {dict.analytics.table_tab}
+        </button>
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${
+            activeTab === 'analytics' 
+              ? 'border-blue-600 text-blue-600' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {dict.analytics.analytics_tab}
+        </button>
+      </div>
+
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        {/* Row 1: Machine Selector (Full width) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{dict.select_machine}</label>
-          <select 
-            value={selectedMachine}
-            onChange={(e) => setSelectedMachine(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
-          >
-            <option value="">{common.select_placeholder}</option>
-            {machinery.map(m => <option key={m.machinery_id} value={m.machinery_id}>{m.machinery_full_name}</option>)}
-          </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Machine Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{dict.select_machine}</label>
+            <select 
+              value={selectedMachine}
+              onChange={(e) => setSelectedMachine(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            >
+              <option value="">{activeTab === 'analytics' ? 'Toda la maquinaria' : common.select_placeholder}</option>
+              {machinery.map(m => <option key={m.machinery_id} value={m.machinery_id}>{m.machinery_full_name}</option>)}
+            </select>
+          </div>
+
+          {/* Machine Type Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{dict.analytics.machinery_type}</label>
+            <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200">
+              <button
+                onClick={() => setMachineType('all')}
+                className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${
+                  machineType === 'all' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
+                }`}
+              >
+                {common.all}
+              </button>
+              <button
+                onClick={() => setMachineType('owned')}
+                className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${
+                  machineType === 'owned' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
+                }`}
+              >
+                {dict.analytics.owned_only}
+              </button>
+              <button
+                onClick={() => setMachineType('rented')}
+                className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${
+                  machineType === 'rented' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
+                }`}
+              >
+                {dict.analytics.rented_only}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Row 2: Date range and Buttons */}
@@ -241,61 +319,70 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
               className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
-          <div className="md:col-span-2 flex gap-2">
-            <button 
-              onClick={exportPDF}
-              disabled={logs.length === 0}
-              className="flex items-center justify-center gap-2 flex-1 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-300 transition-colors"
-            >
-              <Download size={18} />
-              {dict.export_pdf}
-            </button>
-            <button 
-              onClick={exportExcel}
-              disabled={logs.length === 0}
-              className="flex items-center justify-center gap-2 flex-1 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
-            >
-              <Search size={18} />
-              {dict.export_excel || 'Exportar Excel'}
-            </button>
-          </div>
+          
+          {activeTab === 'table' && (
+            <div className="md:col-span-2 flex gap-2">
+              <button 
+                onClick={exportPDF}
+                disabled={logs.length === 0}
+                className="flex items-center justify-center gap-2 flex-1 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-300 transition-colors"
+              >
+                <Download size={18} />
+                {dict.export_pdf}
+              </button>
+              <button 
+                onClick={exportExcel}
+                disabled={logs.length === 0}
+                className="flex items-center justify-center gap-2 flex-1 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
+              >
+                <Search size={18} />
+                {dict.export_excel || 'Exportar Excel'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100 text-gray-900">
-              <th className="p-4 font-semibold">{dict.columns.date}</th>
-              <th className="p-4 font-semibold">{dict.columns.operator}</th>
-              <th className="p-4 font-semibold">{dict.columns.project}</th>
-              <th className="p-4 font-semibold">{dict.columns.start}</th>
-              <th className="p-4 font-semibold">{dict.columns.end}</th>
-              <th className="p-4 font-semibold">{dict.columns.fuel}</th>
-              <th className="p-4 font-semibold">{dict.columns.observations}</th>
-            </tr>
-          </thead>
-          <tbody className="text-gray-900">
-            {loading ? (
-              <tr><td colSpan={7} className="p-8 text-center text-gray-500">{dict.loading}</td></tr>
-            ) : logs.length === 0 ? (
-              <tr><td colSpan={7} className="p-8 text-center text-gray-500">{dict.no_logs}</td></tr>
-            ) : (
-              logs.map(log => (
-                <tr key={log.machinery_log_id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="p-4 text-sm">{log.date}</td>
-                  <td className="p-4 text-sm font-medium">{log.operator_name}</td>
-                  <td className="p-4 text-sm">{log.projects?.project_name}</td>
-                  <td className="p-4 text-sm font-mono">{log.start_time}</td>
-                  <td className="p-4 text-sm font-mono">{log.end_time || '-'}</td>
-                  <td className="p-4 text-sm">{log.fuel_liters}</td>
-                  <td className="p-4 text-sm text-gray-700 italic max-w-xs truncate">{log.observations}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {activeTab === 'table' ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100 text-gray-900">
+                <th className="p-4 font-semibold">{dict.columns.date}</th>
+                <th className="p-4 font-semibold">{dict.columns.operator}</th>
+                <th className="p-4 font-semibold">{dict.columns.project}</th>
+                <th className="p-4 font-semibold">{dict.columns.start}</th>
+                <th className="p-4 font-semibold">{dict.columns.end}</th>
+                <th className="p-4 font-semibold">{dict.columns.fuel}</th>
+                <th className="p-4 font-semibold">{dict.columns.fuel_price}</th>
+                <th className="p-4 font-semibold">{dict.columns.observations}</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-900">
+              {loading ? (
+                <tr><td colSpan={8} className="p-8 text-center text-gray-500">{dict.loading}</td></tr>
+              ) : logs.length === 0 ? (
+                <tr><td colSpan={8} className="p-8 text-center text-gray-500">{selectedMachine ? dict.no_logs : 'Selecciona una máquina para ver la tabla'}</td></tr>
+              ) : (
+                logs.map(log => (
+                  <tr key={log.machinery_log_id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                    <td className="p-4 text-sm">{log.date}</td>
+                    <td className="p-4 text-sm font-medium">{log.operator_name}</td>
+                    <td className="p-4 text-sm">{log.projects?.project_name}</td>
+                    <td className="p-4 text-sm font-mono">{log.start_time}</td>
+                    <td className="p-4 text-sm font-mono">{log.end_time || '-'}</td>
+                    <td className="p-4 text-sm">{log.fuel_liters}</td>
+                    <td className="p-4 text-sm font-mono">{log.fuel_price ? `$${log.fuel_price}` : '-'}</td>
+                    <td className="p-4 text-sm text-gray-700 italic max-w-xs truncate">{log.observations}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <LogbookAnalytics logs={logs} dict={dict} />
+      )}
     </div>
   )
 }

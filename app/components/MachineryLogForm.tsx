@@ -125,6 +125,17 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
         />
       </div>
 
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">{dict.fuel_price}</label>
+        <input 
+          type="number" 
+          step="0.01" 
+          name="fuel_price" 
+          placeholder={dict.fuel_price_placeholder}
+          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+        />
+      </div>
+
       <button 
         type="submit" 
         disabled={loading}

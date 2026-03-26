@@ -15,6 +15,7 @@ export async function createMachinery(formData: FormData) {
   const machinery_model = formData.get('machinery_model') as string
   const machinery_serial_code = formData.get('machinery_serial_code') as string
   const observations = formData.get('observations') as string
+  const is_rented = formData.get('is_rented') === 'true'
 
   const { data, error } = await supabaseAdmin
     .from('machinery')
@@ -24,7 +25,8 @@ export async function createMachinery(formData: FormData) {
       machinery_name, 
       machinery_model, 
       machinery_serial_code,
-      observations
+      observations,
+      is_rented
     }])
     .select()
     .single()
@@ -51,6 +53,7 @@ export async function updateMachinery(machinery_id: number, formData: FormData) 
   const machinery_model = formData.get('machinery_model') as string
   const machinery_serial_code = formData.get('machinery_serial_code') as string
   const observations = formData.get('observations') as string
+  const is_rented = formData.get('is_rented') === 'true'
 
   const { data, error } = await supabaseAdmin
     .from('machinery')
@@ -60,7 +63,8 @@ export async function updateMachinery(machinery_id: number, formData: FormData) 
       machinery_name, 
       machinery_model, 
       machinery_serial_code,
-      observations
+      observations,
+      is_rented
     })
     .eq('machinery_id', machinery_id)
     .select()

@@ -71,6 +71,11 @@ export default function CorrectionLogForm({ dict, adminDict }: CorrectionLogForm
           <div className="bg-yellow-50 p-4 rounded-lg text-sm border border-yellow-100 text-gray-900">
             <p><strong>{dict.operator}:</strong> {log.operator_name}</p>
             <p><strong>{dict.date}:</strong> {log.date}</p>
+            <p><strong>{dict.fuel_liters}:</strong> {log.fuel_liters}</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{dict.fuel_price}</label>
+            <input type="number" step="0.01" name="fuel_price" defaultValue={log.fuel_price} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{dict.end_time}</label>

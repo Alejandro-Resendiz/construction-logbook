@@ -9,6 +9,7 @@ export async function createMachineryLog(formData: FormData) {
   const operator_name = formData.get('operator_name') as string
   const start_time = formData.get('start_time') as string
   const fuel_liters = parseFloat(formData.get('fuel_liters') as string)
+  const fuel_price = parseFloat(formData.get('fuel_price') as string) || null
 
   const { data, error } = await supabase
     .from('machinery_logs')
@@ -20,6 +21,7 @@ export async function createMachineryLog(formData: FormData) {
         operator_name,
         start_time,
         fuel_liters,
+        fuel_price,
       },
     ])
     .select('hash_id')

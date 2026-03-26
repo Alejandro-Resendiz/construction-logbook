@@ -94,7 +94,7 @@ export default function AuthSidenav({ dict, role }: AuthSidenavProps) {
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:flex lg:flex-col
+        lg:translate-x-0 lg:flex lg:flex-col
       `}>
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
           <Link href="/" className="flex items-center gap-2">
