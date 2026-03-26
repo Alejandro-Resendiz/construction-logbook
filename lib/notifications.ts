@@ -3,7 +3,7 @@ import { AuthRequestEmail } from '@/app/emails/AuthRequestEmail';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-const ORIGIN_EMAIL = process.env.MAINTENANCE_ADMIN_EMAIL || 'onboarding@resend.dev';
+const ORIGIN_EMAIL = process.env.MAINTENANCE_ORIGIN_EMAIL || 'onboarding@resend.dev';
 const ADMIN_EMAIL = process.env.MAINTENANCE_ADMIN_EMAIL || '';
 
 
@@ -17,7 +17,7 @@ export async function sendMaintenanceAuthNotification(request: {
 
   try {
     const { data, error } = await resend.emails.send({
-      from: 'HIVACO <notifications@resend.dev>',
+      from: ORIGIN_EMAIL,
       to: [ADMIN_EMAIL],
       subject: `Autorización Requerida: ${request.machineName}`,
       react: AuthRequestEmail({
