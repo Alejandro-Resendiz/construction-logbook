@@ -56,7 +56,7 @@ export default async function MaintenanceVerifyPage({
           <CheckCircle2 className="mx-auto text-blue-500" size={48} />
           <h1 className="text-xl font-bold text-gray-900">Ya Procesado</h1>
           <p className="text-gray-500">
-            Esta solicitud para <strong>{request.machinery?.machinery_name}</strong> ya ha sido marcada como{' '}
+            Esta solicitud para <strong>{request.machinery?.[0]?.machinery_name}</strong> ya ha sido marcada como{' '}
             <span className="font-bold">{dict.maintenance[request.status]}</span>.
           </p>
           <Link href="/app/maintenance" className="inline-flex items-center gap-2 text-blue-600 font-bold hover:underline pt-4">
@@ -99,7 +99,7 @@ export default async function MaintenanceVerifyPage({
           Solicitud {action === 'approve' ? 'Autorizada' : 'Denegada'}
         </h1>
         <p className="text-gray-500">
-          El registro para <strong>{request.machinery?.machinery_name}</strong> ha sido{' '}
+          El registro para <strong>{request.machinery?.[0]?.machinery_name}</strong> ha sido{' '}
           <span className={`font-bold ${action === 'approve' ? 'text-green-600' : 'text-red-600'}`}>
             {action === 'approve' ? 'autorizado' : 'denegado'}
           </span>{' '}
