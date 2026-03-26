@@ -12,12 +12,14 @@ const supabaseAdmin = createClient(
 export async function adminUpdateLog(hash_id: string, formData: FormData) {
   const end_time = formData.get('end_time') as string
   const observations = formData.get('observations') as string
+  const fuel_price = parseFloat(formData.get('fuel_price') as string) || null
 
   const { error } = await supabaseAdmin
     .from('machinery_logs')
     .update({
       end_time,
       observations,
+      fuel_price,
       is_corrected: true,
       is_completed: true // Ensure it stays completed
     })

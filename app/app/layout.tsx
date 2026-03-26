@@ -15,12 +15,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const role = user?.user_metadata?.role || null
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
       {/* Sidenav (contains mobile header internally) */}
       <AuthSidenav dict={dict} role={role} />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <main className="flex-1">
           {children}
         </main>

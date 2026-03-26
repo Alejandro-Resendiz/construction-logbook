@@ -92,6 +92,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
       dict.columns.start,
       dict.columns.end,
       dict.columns.fuel,
+      dict.columns.fuel_price,
       dict.columns.observations,
       dict.columns.signature
     ]
@@ -103,6 +104,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
       log.start_time,
       log.end_time || '-',
       log.fuel_liters,
+      log.fuel_price || '-',
       log.observations || '',
       '' // Empty for signature
     ])
@@ -120,9 +122,10 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
         2: { overflow: 'linebreak' },
         3: { cellWidth: 15 },
         4: { cellWidth: 15 },
-        5: { cellWidth: 21, overflow: 'linebreak' },
-        6: { overflow: 'linebreak' },
-        7: { cellWidth: 30 }
+        5: { cellWidth: 20 },
+        6: { cellWidth: 15 },
+        7: { overflow: 'linebreak' },
+        8: { cellWidth: 25 }
       }
     })
 
@@ -182,7 +185,8 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
         log.start_time, // Col D: HORA INICIO
         log.end_time || '-', // Col E: HORA FIN
         log.fuel_liters, // Col F: CARGA DE COMBUSTIBLE
-        log.observations || '' // Col G: OBSERVACIONES
+        log.fuel_price || '-', // Col G: PRECIO COMBUSTIBLE
+        log.observations || '' // Col H: OBSERVACIONES
       ]
 
       // Set values and copy styles from templateRow cell by cell
@@ -272,14 +276,15 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
               <th className="p-4 font-semibold">{dict.columns.start}</th>
               <th className="p-4 font-semibold">{dict.columns.end}</th>
               <th className="p-4 font-semibold">{dict.columns.fuel}</th>
+              <th className="p-4 font-semibold">{dict.columns.fuel_price}</th>
               <th className="p-4 font-semibold">{dict.columns.observations}</th>
             </tr>
           </thead>
           <tbody className="text-gray-900">
             {loading ? (
-              <tr><td colSpan={7} className="p-8 text-center text-gray-500">{dict.loading}</td></tr>
+              <tr><td colSpan={8} className="p-8 text-center text-gray-500">{dict.loading}</td></tr>
             ) : logs.length === 0 ? (
-              <tr><td colSpan={7} className="p-8 text-center text-gray-500">{dict.no_logs}</td></tr>
+              <tr><td colSpan={8} className="p-8 text-center text-gray-500">{dict.no_logs}</td></tr>
             ) : (
               logs.map(log => (
                 <tr key={log.machinery_log_id} className="border-b border-gray-50 hover:bg-gray-50/50">
@@ -289,6 +294,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
                   <td className="p-4 text-sm font-mono">{log.start_time}</td>
                   <td className="p-4 text-sm font-mono">{log.end_time || '-'}</td>
                   <td className="p-4 text-sm">{log.fuel_liters}</td>
+                  <td className="p-4 text-sm font-mono">{log.fuel_price ? `$${log.fuel_price}` : '-'}</td>
                   <td className="p-4 text-sm text-gray-700 italic max-w-xs truncate">{log.observations}</td>
                 </tr>
               ))
