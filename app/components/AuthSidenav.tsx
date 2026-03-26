@@ -12,7 +12,8 @@ import {
   ShieldCheck,
   Menu,
   X,
-  FileText
+  FileText,
+  Wrench
 } from 'lucide-react'
 import LogoutButton from './LogoutButton'
 
@@ -47,6 +48,12 @@ export default function AuthSidenav({ dict, role }: AuthSidenavProps) {
       name: dict.nav.admin_correction, 
       href: '/app/log/correct', 
       icon: History,
+      roles: ['admin', 'resident']
+    },
+    { 
+      name: dict.nav.maintenance, 
+      href: '/app/maintenance', 
+      icon: Wrench,
       roles: ['admin', 'resident']
     },
     { 

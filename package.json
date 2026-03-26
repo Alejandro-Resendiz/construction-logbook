@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@react-email/components": "^1.0.10",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.2",
     "@visx/axis": "^3.12.0",
@@ -31,7 +32,9 @@
     "next": "16.2.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "resend": "^6.9.4",
     "sonner": "^2.0.7",
+    "zod": "^4.3.6",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

@@ -7,6 +7,7 @@
     "admin_correction": "Corrección Turno",
     "manage_projects": "Proyectos",
     "manage_machinery": "Maquinaria",
+    "maintenance": "Mantenimiento",
     "login": "Login Admin"
   },
   "new_log": {
@@ -136,9 +137,47 @@
       "update": "Actualizar Maquina",
       "creating": "Registrando...",
       "no_machinery": "No hay maquinaria registrada."
-    }
-  },
-  "common": {
+      }
+      },
+      "maintenance": {
+      "title": "Gestión de Mantenimiento",
+      "new_request": "Nuevo Mantenimiento",
+      "edit_request": "Editar Mantenimiento",
+      "folio": "Folio",
+      "machinery": "Maquinaria",
+
+      "is_external": "Servicio Externo",
+      "type": "Tipo",
+
+      "maintenance_type": "Tipo de Mantenimiento",
+      "date": "Fecha",
+      "last_maintenance": "Último Mant.",
+      "next_maintenance": "Próximo Mant.",
+      "description": "Descripción",
+      "spare_parts": "Refacciones",
+      "status": "Estado",
+      "cost": "Costo",
+      "worked_time": "Horas Trab.",
+      "downtime": "Horas Paro",
+      "observations": "Observaciones",
+      "attachments": "Adjuntos",
+      "add_spare_part": "Agregar Refacción",
+      "spare_description": "Descripción de Refacción",
+      "spare_quantity": "Cantidad",
+      "spare_amount": "Monto (opcional)",
+      "no_requests": "No hay mantenimientos registrados.",
+      "preventive": "Preventivo",
+      "corrective": "Correctivo",
+      "pending": "Pendiente",
+      "approved": "Aprobado",
+      "rejected": "Rechazado",
+      "success_create": "Mantenimiento registrado con éxito",
+      "success_update": "Mantenimiento actualizado con éxito",
+      "create": "Crear Registro",
+      "update": "Actualizar Registro"
+      },
+      "common": {
+
     "error": "Error",
     "all": "Todos",
     "yes": "Sí",
