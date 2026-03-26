@@ -84,7 +84,7 @@ export async function createMaintenanceRequest(formData: FormData, spareParts: a
     return { success: true, data }
   } catch (err) {
     if (err instanceof z.ZodError) {
-      return { error: 'Validation failed', details: err.errors }
+      return { error: 'Validation failed', details: err.issues }
     }
     return { error: 'Internal Server Error' }
   }
