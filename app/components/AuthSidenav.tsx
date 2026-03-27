@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   FileText,
-  Wrench
+  Wrench,
+  Hammer
 } from 'lucide-react'
 import LogoutButton from './LogoutButton'
 
@@ -66,6 +67,12 @@ export default function AuthSidenav({ dict, role }: AuthSidenavProps) {
       name: dict.nav.manage_machinery, 
       href: '/app/machinery', 
       icon: Truck,
+      roles: ['admin']
+    },
+    { 
+      name: dict.nav.manage_depreciation, 
+      href: '/app/machinery_depreciation', 
+      icon: Hammer,
       roles: ['admin']
     }
   ]

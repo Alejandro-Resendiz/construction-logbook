@@ -7,6 +7,7 @@
     "admin_correction": "Corrección Turno",
     "manage_projects": "Proyectos",
     "manage_machinery": "Maquinaria",
+    "manage_depreciation": "Depreciación",
     "maintenance": "Mantenimiento",
     "login": "Login Admin"
   },
@@ -137,6 +138,43 @@
       "update": "Actualizar Maquina",
       "creating": "Registrando...",
       "no_machinery": "No hay maquinaria registrada."
+      },
+      "depreciation": {
+        "title": "Depreciación de Maquinaria",
+        "optimal_fuel": "Consumo Óptimo (L/h)",
+        "service_life": "Vida Útil (Años)",
+        "purchase_value": "Valor de Compra",
+        "rescue_value": "Valor de Rescate (%)",
+        "create": "Registrar Depreciación",
+        "update": "Actualizar Depreciación",
+        "no_data": "No hay datos de depreciación."
+      },
+      "machinery_cost": {
+        "title": "Costos de Maquinaria",
+        "utility_percent": "Utilidad (%)",
+        "operator_salary": "Salario Operador",
+        "calculate": "Calcular",
+        "clear": "Limpiar",
+        "export": "Exportar CSV",
+        "worked_hours": "Horas Trab.",
+        "diesel_consumption": "Diesel (L)",
+        "diesel_price": "Precio Diesel",
+        "maintenance_cost": "Costo Mant.",
+        "rescue_value_label": "Valor Rescate",
+        "fuel_cost_hr": "Costo Comb/h",
+        "operator_cost_hr": "Costo Op/h",
+        "maintenance_cost_hr": "Costo Mant/h",
+        "depreciation_cost_hr": "Costo Depr/h",
+        "total_cost_hr": "Costo Total/h",
+        "rent_rate_hr": "Tarifa Renta/h",
+        "chart_total_cost": "Costo Total por Hora ($/h)",
+        "chart_profitability": "Margen de Utilidad ($/h)",
+        "chart_project_total": "Costo Operativo por Proyecto (MXN)",
+        "analysis_period": "Periodo de Análisis",
+        "refresh_data": "Refrescar Datos",
+        "calculation_required": "Cálculo Requerido",
+        "calculation_hint": "Realice los cálculos en la pestaña de tabla para habilitar las visualizaciones.",
+        "visualizations": "Visualizaciones"
       }
       },
       "maintenance": {

@@ -1,44 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { login } from '@/app/login/actions'
 
 interface LoginFormProps {
   dict: any
 }
 
 export default function LoginForm({ dict }: LoginFormProps) {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleAction = async (formData: FormData) => {
     setLoading(true)
     setError(null)
-
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (loginError) {
+    
+    const result = await login(formData)
+    
+    if (result?.error) {
       setError(dict.login_error)
       setLoading(false)
-    } else {
-      // Small delay to ensure cookies are persisted
-      setTimeout(() => {
-        router.push('/app')
-        router.refresh()
-      }, 500)
     }
   }
 
   return (
-    <form onSubmit={handleLogin} className="space-y-4">
+    <form action={handleAction} className="space-y-4">
       {error && (
         <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">
           {error}
@@ -51,8 +37,6 @@ export default function LoginForm({ dict }: LoginFormProps) {
           type="email" 
           name="email"
           autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
           required 
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
         />
@@ -64,8 +48,6 @@ export default function LoginForm({ dict }: LoginFormProps) {
           type="password" 
           name="password"
           autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
           required 
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
         />
