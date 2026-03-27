@@ -85,7 +85,7 @@ export default function AuthSidenav({ dict, role }: AuthSidenavProps) {
       <div className="lg:hidden bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 sticky top-0 z-30">
         <Link href="/" className="flex items-center gap-2">
           <ShieldCheck className="h-8 w-8 text-blue-600" />
-          <span className="font-bold text-lg text-gray-900 tracking-tight">HIV App</span>
+          <span className="font-bold text-lg text-gray-900 tracking-tight">SIGMA App</span>
         </Link>
         <button 
           onClick={() => setIsOpen(true)}
@@ -113,7 +113,7 @@ export default function AuthSidenav({ dict, role }: AuthSidenavProps) {
         <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100">
           <Link href="/" className="flex items-center gap-2">
             <ShieldCheck className="h-8 w-8 text-blue-600" />
-            <span className="font-bold text-xl text-gray-900 tracking-tight">HIV App</span>
+            <span className="font-bold text-xl text-gray-900 tracking-tight">SIGMA App</span>
           </Link>
           <button 
             onClick={() => setIsOpen(false)}

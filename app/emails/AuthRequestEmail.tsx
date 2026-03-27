@@ -46,7 +46,7 @@ export const AuthRequestEmail = ({
         </Section>
         <Hr style={hr} />
         <Text style={footer}>
-          HIVACO - Sistema de Control de Bitácoras
+          SIGMA - Sistema de Control de Bitácoras
         </Text>
       </Container>
     </Body>

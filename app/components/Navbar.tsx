@@ -68,7 +68,7 @@ export default function Navbar({ dict }: NavbarProps) {
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center gap-2">
               <Hammer className="h-8 w-8 text-blue-600" />
-              <span className="font-bold text-xl text-gray-900 tracking-tight">HIV Logbook</span>
+              <span className="font-bold text-xl text-gray-900 tracking-tight">SIGMA Logbook</span>
             </Link>
           </div>
 

@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "HIV Logbook",
-  description: "Machinery Logbook for Hivaco",
+  description: "SIGMA Machinery Logbook",
 };
 
 export default function RootLayout({
