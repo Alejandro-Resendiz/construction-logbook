@@ -17,7 +17,8 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string) {
         optimal_fuel_consumption,
         service_life,
         purchase_value,
-        rescue_value
+        rescue_value,
+        estimated_depreciation_rate
       )
     `)
 
@@ -102,6 +103,7 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string) {
       service_life: depr?.service_life || 0,
       purchase_value: depr?.purchase_value || 0,
       rescue_value_percent: (depr?.rescue_value || 0),
+      estimated_depreciation_rate: depr?.estimated_depreciation_rate || 0,
     }
   })
 

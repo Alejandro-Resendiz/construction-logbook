@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS machinery_depreciation (
     service_life INTEGER, -- years
     purchase_value NUMERIC(15, 2),
     rescue_value NUMERIC(5, 4), -- stored as decimal (e.g., 0.10 for 10%)
+    estimated_depreciation_rate NUMERIC(15, 2), -- optional: stored as MXN/hour
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -104,9 +104,11 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       const operator_cost_hr = item.operator_salary / worked_hours
       const maintenance_cost_hr = item.maintenance_cost / worked_hours
       
-      // Depreciation Cost/hr: (purchase_value - rescue_value) / lifespan_years / 2112
+      // Depreciation Cost/hr: use manual override if exists, otherwise calculate: (purchase_value - rescue_value) / lifespan_years / 2112
       const service_life = item.service_life || 1
-      const depreciation_cost_hr = (item.purchase_value - rescue_value) / service_life / 2112
+      const depreciation_cost_hr = Number(item.estimated_depreciation_rate) > 0 
+        ? Number(item.estimated_depreciation_rate)
+        : (item.purchase_value - rescue_value) / service_life / 2112
       
       const total_cost_hr = fuel_cost_hr + operator_cost_hr + maintenance_cost_hr + depreciation_cost_hr
       const rent_rate_hr = total_cost_hr * (1 + (utilityPercent / 100))
@@ -385,6 +387,7 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
                 <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.depreciation.optimal_fuel}</th>
                 <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.machinery_cost.diesel_price}</th>
                 <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.machinery_cost.maintenance_cost}</th>
+                <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.depreciation.estimated_depreciation_rate}</th>
                 <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.machinery_cost.operator_salary}</th>
                 
                 {isCalculated && (
@@ -418,6 +421,9 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
                     />
                   </td>
                   <td className="p-4 font-mono text-red-600">${item.maintenance_cost.toLocaleString()}</td>
+                  <td className="p-4 font-mono text-gray-500">
+                    {item.estimated_depreciation_rate > 0 ? `$${item.estimated_depreciation_rate}/h` : '—'}
+                  </td>
                   <td className="p-4">
                     <input 
                       type="number" 

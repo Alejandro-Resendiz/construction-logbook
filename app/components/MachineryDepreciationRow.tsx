@@ -13,10 +13,11 @@ interface MachineryDepreciationRowProps {
 export default function MachineryDepreciationRow({ depr, dict }: MachineryDepreciationRowProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    optimal_fuel_consumption: depr.optimal_fuel_consumption,
-    service_life: depr.service_life,
-    purchase_value: depr.purchase_value,
-    rescue_value: depr.rescue_value * 100 // Convert to percentage for display
+    optimal_fuel_consumption: depr.optimal_fuel_consumption ?? '',
+    service_life: depr.service_life ?? '',
+    purchase_value: depr.purchase_value ?? '',
+    rescue_value: depr.rescue_value ? depr.rescue_value * 100 : '', // Convert to percentage for display
+    estimated_depreciation_rate: depr.estimated_depreciation_rate ?? ''
   })
 
   const { upsertDepreciation } = useMachineryDepreciationStore()
@@ -24,10 +25,11 @@ export default function MachineryDepreciationRow({ depr, dict }: MachineryDeprec
   const handleSave = async () => {
     const res = await upsertDepreciation({
       machinery_id: depr.machinery_id,
-      optimal_fuel_consumption: Number(formData.optimal_fuel_consumption),
-      service_life: Number(formData.service_life),
-      purchase_value: Number(formData.purchase_value),
-      rescue_value: Number(formData.rescue_value) / 100
+      optimal_fuel_consumption: formData.optimal_fuel_consumption !== '' ? Number(formData.optimal_fuel_consumption) : undefined,
+      service_life: formData.service_life !== '' ? Number(formData.service_life) : undefined,
+      purchase_value: formData.purchase_value !== '' ? Number(formData.purchase_value) : undefined,
+      rescue_value: formData.rescue_value !== '' ? Number(formData.rescue_value) / 100 : undefined,
+      estimated_depreciation_rate: formData.estimated_depreciation_rate !== '' ? Number(formData.estimated_depreciation_rate) : undefined
     })
 
     if (res.success) {
@@ -56,7 +58,7 @@ export default function MachineryDepreciationRow({ depr, dict }: MachineryDeprec
             className="w-24 p-1 border border-gray-300 rounded outline-none focus:ring-1 focus:ring-blue-500"
           />
         ) : (
-          `${depr.optimal_fuel_consumption} L/h`
+          depr.optimal_fuel_consumption ? `${depr.optimal_fuel_consumption} L/h` : '—'
         )}
       </td>
       <td className="p-4 text-gray-600">
@@ -68,7 +70,7 @@ export default function MachineryDepreciationRow({ depr, dict }: MachineryDeprec
             className="w-20 p-1 border border-gray-300 rounded outline-none focus:ring-1 focus:ring-blue-500"
           />
         ) : (
-          `${depr.service_life} años`
+          depr.service_life ? `${depr.service_life} años` : '—'
         )}
       </td>
       <td className="p-4 text-gray-600">
@@ -81,7 +83,7 @@ export default function MachineryDepreciationRow({ depr, dict }: MachineryDeprec
             className="w-32 p-1 border border-gray-300 rounded outline-none focus:ring-1 focus:ring-blue-500"
           />
         ) : (
-          `$${Number(depr.purchase_value).toLocaleString()}`
+          depr.purchase_value ? `$${Number(depr.purchase_value).toLocaleString()}` : '—'
         )}
       </td>
       <td className="p-4 text-gray-600">
@@ -97,7 +99,20 @@ export default function MachineryDepreciationRow({ depr, dict }: MachineryDeprec
             <span>%</span>
           </div>
         ) : (
-          `${(depr.rescue_value * 100).toFixed(1)}%`
+          depr.rescue_value !== null && depr.rescue_value !== undefined ? `${(depr.rescue_value * 100).toFixed(1)}%` : '—'
+        )}
+      </td>
+      <td className="p-4 text-gray-600">
+        {isEditing ? (
+          <input 
+            type="number" 
+            step="0.01"
+            value={formData.estimated_depreciation_rate}
+            onChange={(e) => setFormData({ ...formData, estimated_depreciation_rate: e.target.value as any })}
+            className="w-32 p-1 border border-gray-300 rounded outline-none focus:ring-1 focus:ring-blue-500"
+          />
+        ) : (
+          depr.estimated_depreciation_rate ? `$${Number(depr.estimated_depreciation_rate).toLocaleString()}/h` : '—'
         )}
       </td>
       <td className="p-4 text-right">
@@ -113,10 +128,11 @@ export default function MachineryDepreciationRow({ depr, dict }: MachineryDeprec
               onClick={() => {
                 setIsEditing(false)
                 setFormData({
-                  optimal_fuel_consumption: depr.optimal_fuel_consumption,
-                  service_life: depr.service_life,
-                  purchase_value: depr.purchase_value,
-                  rescue_value: depr.rescue_value * 100
+                  optimal_fuel_consumption: depr.optimal_fuel_consumption ?? '',
+                  service_life: depr.service_life ?? '',
+                  purchase_value: depr.purchase_value ?? '',
+                  rescue_value: depr.rescue_value ? depr.rescue_value * 100 : '',
+                  estimated_depreciation_rate: depr.estimated_depreciation_rate ?? ''
                 })
               }}
               className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"

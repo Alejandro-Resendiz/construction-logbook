@@ -145,6 +145,7 @@
         "service_life": "Vida Útil (Años)",
         "purchase_value": "Valor de Compra",
         "rescue_value": "Valor de Rescate (%)",
+        "estimated_depreciation_rate": "Tasa de Depreciación (MXN/h)",
         "create": "Registrar Depreciación",
         "update": "Actualizar Depreciación",
         "no_data": "No hay datos de depreciación."

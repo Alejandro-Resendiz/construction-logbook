@@ -35,10 +35,11 @@ export default function MachineryDepreciationPage() {
 
     const res = await upsertDepreciation({
       machinery_id,
-      optimal_fuel_consumption: Number(formData.get('optimal_fuel_consumption')),
-      service_life: Number(formData.get('service_life')),
-      purchase_value: Number(formData.get('purchase_value')),
-      rescue_value: Number(formData.get('rescue_value')) / 100
+      optimal_fuel_consumption: formData.get('optimal_fuel_consumption') ? Number(formData.get('optimal_fuel_consumption')) : undefined,
+      service_life: formData.get('service_life') ? Number(formData.get('service_life')) : undefined,
+      purchase_value: formData.get('purchase_value') ? Number(formData.get('purchase_value')) : undefined,
+      rescue_value: formData.get('rescue_value') ? Number(formData.get('rescue_value')) / 100 : undefined,
+      estimated_depreciation_rate: formData.get('estimated_depreciation_rate') ? Number(formData.get('estimated_depreciation_rate')) : undefined
     })
 
     if (res.success) {
@@ -132,7 +133,7 @@ export default function MachineryDepreciationPage() {
                     {dict.admin.depreciation.optimal_fuel}
                   </label>
                   <input 
-                    type="number" step="0.01" name="optimal_fuel_consumption" required
+                    type="number" step="0.01" name="optimal_fuel_consumption"
                     className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" 
                   />
                 </div>
@@ -141,7 +142,7 @@ export default function MachineryDepreciationPage() {
                     {dict.admin.depreciation.service_life}
                   </label>
                   <input 
-                    type="number" name="service_life" required
+                    type="number" name="service_life"
                     className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" 
                   />
                 </div>
@@ -150,7 +151,7 @@ export default function MachineryDepreciationPage() {
                     {dict.admin.depreciation.purchase_value}
                   </label>
                   <input 
-                    type="number" step="0.01" name="purchase_value" required
+                    type="number" step="0.01" name="purchase_value"
                     className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" 
                   />
                 </div>
@@ -160,11 +161,20 @@ export default function MachineryDepreciationPage() {
                   </label>
                   <div className="flex items-center gap-2">
                     <input 
-                      type="number" step="0.1" name="rescue_value" required
+                      type="number" step="0.1" name="rescue_value"
                       className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" 
                     />
                     <span className="text-gray-500">%</span>
                   </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">
+                    {dict.admin.depreciation.estimated_depreciation_rate}
+                  </label>
+                  <input 
+                    type="number" step="0.01" name="estimated_depreciation_rate"
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" 
+                  />
                 </div>
               </div>
               <div className="flex justify-end">
@@ -191,15 +201,16 @@ export default function MachineryDepreciationPage() {
                   <th className="p-4 font-semibold text-gray-600">{dict.admin.depreciation.service_life}</th>
                   <th className="p-4 font-semibold text-gray-600">{dict.admin.depreciation.purchase_value}</th>
                   <th className="p-4 font-semibold text-gray-600">{dict.admin.depreciation.rescue_value}</th>
+                  <th className="p-4 font-semibold text-gray-600">{dict.admin.depreciation.estimated_depreciation_rate}</th>
                   <th className="p-4 text-right"></th>
                 </tr>
               </thead>
               <tbody className="text-gray-900">
                 {loading ? (
-                  <tr><td colSpan={7} className="p-8 text-center text-gray-400 italic">Cargando...</td></tr>
+                  <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic">Cargando...</td></tr>
                 ) : filteredDepreciations.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-gray-400 italic">
+                    <td colSpan={8} className="p-8 text-center text-gray-400 italic">
                       {dict.admin.depreciation.no_data}
                     </td>
                   </tr>

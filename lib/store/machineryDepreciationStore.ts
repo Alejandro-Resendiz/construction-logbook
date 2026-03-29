@@ -3,10 +3,11 @@ import { supabase } from '@/lib/supabase'
 
 interface DepreciationInfo {
   machinery_id: number
-  optimal_fuel_consumption: number
-  service_life: number
-  purchase_value: number
-  rescue_value: number
+  optimal_fuel_consumption?: number
+  service_life?: number
+  purchase_value?: number
+  rescue_value?: number
+  estimated_depreciation_rate?: number
   machinery?: any
 }
 
