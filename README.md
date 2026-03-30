@@ -1,39 +1,40 @@
 # HIV Logbook
 
-Professional machinery logging and reporting platform built with Next.js 16 and Supabase.
+Professional machinery logging, maintenance, and cost tracking platform built with Next.js 16 and Supabase.
 
-## 🚀 Key Features
+## 🚀 Key Features & Modules
 
 ### 🚜 Operator Logging (Public)
 - **Start Shift**: Capture machine, project, date, and initial fuel.
 - **Secure Hashing**: Generates unique 6-character hex codes for private shift updates.
-- **End Shift**: Simple verification view where operators confirm details and record end times/observations.
+- **End Shift**: Verification view where operators confirm details and record end times/observations.
 
-### 📊 Admin Dashboard (Protected)
-- **Weekly Reporting**: Automated filtering for the current week or custom date ranges (max 7 days).
-- **Professional PDF Export**: Signature-ready reports with centered branding and specialized column formatting.
-- **Smart Excel Export**: Advanced `.xlsx` generation that clones styles from a master template (borders, fonts, logos).
+### 📊 Admin & Cost Dashboard (Protected)
+- **Weekly Reporting**: Automated filtering for the current week or custom date ranges.
+- **Cost Analysis**: Advanced tracking of fuel consumption, worked hours, and machinery depreciation.
+- **Data Visualization**: Professional charting using **Visx** for machinery performance and project costs.
 - **Administrative Correction**: Override and fix any shift record with an automated audit trail.
 
-### 🛠️ Management & CRUD
-- **Projects & Machinery**: Dedicated management interfaces for Site Admins.
-- **Expanded Row Editing**: High-density forms that expand within the data table to prevent horizontal overflow.
-- **Collapsible Forms**: Streamlined UI that hides creation forms behind interactive toggles.
+### 🛠️ Maintenance & Management
+- **Maintenance Tracking**: Comprehensive request and approval workflow for machinery repairs and servicing.
+- **Projects & Machinery**: Dedicated management interfaces with expanded row editing for high-density forms.
+- **Collapsible UI**: Streamlined forms that hide behind interactive toggles to maximize screen real estate.
 
 ### 🔐 Security & Architecture
 - **RBAC**: Multi-role system (Admin, Resident, Operator) powered by Supabase RLS and JWT metadata.
 - **State Management**: Reactive UI powered by **Zustand** for instant, optimistic updates.
 - **Auth SSR**: Full session synchronization between Next.js Server Components and the browser via `@supabase/ssr`.
-- **Modern UX**: Professional notifications using **Sonner** and a mobile-first responsive design.
+- **Component Driven**: UI developed in isolation using **Storybook 8** and **Tailwind CSS 4**.
+- **Internationalization**: Dictionary-based i18n system for multi-language support (ES default).
 
 ## 🛠️ Tech Stack
 - **Framework**: Next.js 16 (App Router)
 - **Database/Auth**: Supabase (`@supabase/ssr`)
 - **State**: Zustand
 - **Styling**: Tailwind CSS 4
-- **Language**: TypeScript
-- **Notifications**: Sonner
+- **Charts**: Visx
 - **Reporting**: `jspdf` & `exceljs`
+- **Component Lab**: Storybook 8
 
 ## 🏁 Getting Started
 
@@ -52,9 +53,8 @@ This project uses the Supabase CLI to manage database changes via migrations.
 ### 3. User Provisioning
 Admin and Resident users are managed via the Supabase Dashboard or local `seed.sql`.
 - Roles (`admin`, `resident`) must be stored in the user's `user_metadata`.
-- For production, manually create users in the Supabase Auth console and set the role metadata.
 
-## 🚀 Deployment to Vercel
+## 🚀 Deployment (Vercel)
 
 ### 1. Configure Environment
 Add the following variables in your Vercel project settings:
