@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
+import dict from '../lib/dictionaries/es.json';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -63,24 +64,30 @@ test.describe('Machinery Cost Dashboard E2E', () => {
   });
 
   test('should render cost aggregates and tables correctly', async ({ page }) => {
-    // 5. Assert title of the page is visible
-    await expect(page.locator('h1')).toContainText('Costos de Maquinaria');
+    // 5. Assert title of the page is visible (from dictionary translation)
+    await expect(page.locator('h1')).toContainText(dict.admin.machinery_cost.title);
 
     // Assert that our newly seeded test machine is visible in the row list
     await expect(page.locator(`text=${TEST_MACHINE_NAME}`)).toBeVisible();
 
-    // Assert the "Calcular" action button exists
-    const calculateBtn = page.locator('button:has-text("Calcular")');
+    // Assert the "Calcular" action button exists (from dictionary translation)
+    const calculateBtn = page.locator(`button:has-text("${dict.admin.machinery_cost.calculate}")`);
     await expect(calculateBtn).toBeVisible();
 
     // Click to execute mathematical cost distribution formulas
     await calculateBtn.click();
 
     // Assert the toast message indicating successful calculations appears
+    // (This string is currently hardcoded in the codebase component, so we keep it literal here)
     await expect(page.locator('text=Cálculos realizados con éxito')).toBeVisible();
 
-    // Validate calculations columns are visible
-    await expect(page.locator('text=Costo Total/h')).toBeVisible();
-    await expect(page.locator('text=Tarifa Renta/h')).toBeVisible();
+    // Validate calculations columns are visible (using dictionary translations and scroll to fit viewports)
+    const totalCostHeader = page.locator(`text=${dict.admin.machinery_cost.total_cost_hr}`);
+    await totalCostHeader.scrollIntoViewIfNeeded();
+    await expect(totalCostHeader).toBeVisible();
+
+    const rentRateHeader = page.locator(`text=${dict.admin.machinery_cost.rent_rate_hr}`);
+    await rentRateHeader.scrollIntoViewIfNeeded();
+    await expect(rentRateHeader).toBeVisible();
   });
 });
