@@ -11,14 +11,16 @@ import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { toast } from 'sonner'
 import LogbookAnalytics from './LogbookAnalytics'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface AppDashboardClientProps {
   machinery: any[]
-  dict: any
   common: any
 }
 
-export default function AppDashboardClient({ machinery, dict, common }: AppDashboardClientProps) {
+export default function AppDashboardClient({ machinery, common }: AppDashboardClientProps) {
+  
+  const { t } = useTranslation('admin')
   const [activeTab, setActiveTab] = useState<'table' | 'analytics'>('table')
   const [selectedMachine, setSelectedMachine] = useState('')
   const [machineType, setMachineType] = useState<'all' | 'owned' | 'rented'>('all')
@@ -30,39 +32,39 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
   const today = format(new Date(), 'yyyy-MM-dd')
 
   const fetchLogs = async () => {
-    // For table tab, machine is usually required to avoid huge lists, 
-    // but for analytics we want fleet-wide data if none is selected.
     if (activeTab === 'table' && !selectedMachine) {
       setLogs([])
       return
     }
     
     setLoading(true)
-    const machineId = selectedMachine ? parseInt(selectedMachine) : undefined
-    const res = await getMachineryLogs(machineId, dateFrom, dateTo)
+    try {
+      const machineId = selectedMachine ? parseInt(selectedMachine) : undefined
+      const res = await getMachineryLogs(machineId, dateFrom, dateTo)
 
-    if (res.error) {
-      console.error(res.error)
-      setLogs([])
-      toast.error(res.error)
-    } else {
-      // Client-side filter for machine type (is_rented)
-      let filteredData = res.logs || []
-      if (machineType === 'owned') {
-        filteredData = filteredData.filter(log => !log.machinery?.is_rented)
-      } else if (machineType === 'rented') {
-        filteredData = filteredData.filter(log => log.machinery?.is_rented)
+      if (res.error) {
+        setLogs([])
+        toast.error(res.error)
+      } else {
+        let filteredData = res.logs || []
+        if (machineType === 'owned') {
+          filteredData = filteredData.filter(log => !log.machinery?.is_rented)
+        } else if (machineType === 'rented') {
+          filteredData = filteredData.filter(log => log.machinery?.is_rented)
+        }
+        setLogs(filteredData)
       }
-      setLogs(filteredData)
+    } catch (err) {
+      toast.error('Error fetching logs');
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   useEffect(() => {
     fetchLogs()
   }, [selectedMachine, dateFrom, dateTo, machineType, activeTab])
 
-  // Validation: Max 7 days
   const handleDateChange = (type: 'from' | 'to', value: string) => {
     const from = type === 'from' ? new Date(value) : new Date(dateFrom)
     const to = type === 'to' ? new Date(value) : new Date(dateTo)
@@ -80,145 +82,140 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
   }
 
   const exportPDF = () => {
-    const doc = new jsPDF()
-    const machineName = machinery.find(m => m.machinery_id.toString() === selectedMachine)?.machinery_full_name
-    
-    // Header
-    doc.setFontSize(18)
-    doc.text(dict.pdf.report_title, 14, 15)
-    
-    doc.setFontSize(12)
-    doc.text(`${dict.pdf.machine_subtitle}: ${machineName}`, 14, 22)
-    
-    const tableColumn = [
-      dict.columns.date,
-      dict.columns.operator,
-      dict.columns.project,
-      dict.columns.start,
-      dict.columns.end,
-      dict.columns.fuel,
-      dict.columns.fuel_price,
-      dict.columns.observations,
-      dict.columns.signature
-    ]
-    
-    const tableRows = logs.map(log => [
-      log.date,
-      log.operator_name,
-      log.projects?.project_name,
-      log.start_time,
-      log.end_time || '-',
-      log.fuel_liters,
-      log.fuel_price || '-',
-      log.observations || '',
-      '' // Empty for signature
-    ])
+    try {
+      const doc = new jsPDF()
+      const machineName = machinery.find(m => m.machinery_id.toString() === selectedMachine)?.machinery_full_name
+      
+      doc.setFontSize(18)
+      doc.text(t('pdf.report_title'), 14, 15)
+      
+      doc.setFontSize(12)
+      doc.text(`${t('pdf.machine_subtitle')}: ${machineName}`, 14, 22)
+      
+      const tableColumn = [
+        t('columns.date'),
+        t('columns.operator'),
+        t('columns.project'),
+        t('columns.start'),
+        t('columns.end'),
+        t('columns.fuel'),
+        t('columns.fuel_price'),
+        t('columns.observations'),
+        t('columns.signature')
+      ]
+      
+      const tableRows = logs.map(log => [
+        log.date,
+        log.operator_name,
+        log.projects?.project_name,
+        log.start_time,
+        log.end_time || '-',
+        log.fuel_liters,
+        log.fuel_price || '-',
+        log.observations || '',
+        ''
+      ])
 
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 30,
-      theme: 'grid',
-      headStyles: { fillColor: "#FFC500", textColor: 0 },
-      styles: { fontSize: 8 },
-      columnStyles: {
-        0: { cellWidth: 18 },
-        1: { overflow: 'linebreak' },
-        2: { overflow: 'linebreak' },
-        3: { cellWidth: 15 },
-        4: { cellWidth: 15 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 15 },
-        7: { overflow: 'linebreak' },
-        8: { cellWidth: 25 }
-      }
-    })
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 30,
+        theme: 'grid',
+        headStyles: { fillColor: "#FFC500", textColor: 0 },
+        styles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 18 },
+          1: { overflow: 'linebreak' },
+          2: { overflow: 'linebreak' },
+          3: { cellWidth: 15 },
+          4: { cellWidth: 15 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 15 },
+          7: { overflow: 'linebreak' },
+          8: { cellWidth: 25 }
+        }
+      })
 
-    // Signatures at bottom
-    // @ts-ignore
-    const finalY = doc.lastAutoTable.finalY + 30
-    
-    // Line 1: Operator
-    const line1Start = 20
-    const line1End = 80
-    const line1Center = line1Start + (line1End - line1Start) / 2
-    doc.line(line1Start, finalY, line1End, finalY)
-    doc.setFontSize(8)
-    doc.text(dict.signatures.operator, line1Center, finalY + 5, { align: 'center' })
-    
-    // Line 2: Admin
-    const line2Start = 120
-    const line2End = 180
-    const line2Center = line2Start + (line2End - line2Start) / 2
-    doc.line(line2Start, finalY, line2End, finalY)
-    doc.text(dict.signatures.admin, line2Center, finalY + 5, { align: 'center' })
+      // @ts-ignore
+      const finalY = doc.lastAutoTable.finalY + 30
+      
+      const line1Start = 20
+      const line1End = 80
+      const line1Center = line1Start + (line1End - line1Start) / 2
+      doc.line(line1Start, finalY, line1End, finalY)
+      doc.setFontSize(8)
+      doc.text(t('signatures.operator'), line1Center, finalY + 5, { align: 'center' })
+      
+      const line2Start = 120
+      const line2End = 180
+      const line2Center = line2Start + (line2End - line2Start) / 2
+      doc.line(line2Start, finalY, line2End, finalY)
+      doc.text(t('signatures.admin'), line2Center, finalY + 5, { align: 'center' })
 
-    const fileName = `Reporte_${machineName}_${dateFrom}_a_${dateTo}.pdf`
-    doc.save(fileName)
+      const fileName = `Reporte_${machineName}_${dateFrom}_a_${dateTo}.pdf`
+      doc.save(fileName)
+    } catch (err) {
+      toast.error('Error exporting PDF');
+    }
   }
 
   const exportExcel = async () => {
-    const machineName = machinery.find(m => m.machinery_id.toString() === selectedMachine)?.machinery_full_name
-    
-    // 1. Load the template from the public folder
-    const response = await fetch('/templates/logbook_template.xlsx')
-    const arrayBuffer = await response.arrayBuffer()
-    
-    const workbook = new ExcelJS.Workbook()
-    await workbook.xlsx.load(arrayBuffer)
-    
-    const worksheet = workbook.getWorksheet(1)
-    if (!worksheet) return
-
-    // 2. Fill the header metadata
-    worksheet.getCell('C4').value = machineName // Machine Full Name
-    worksheet.getCell('B2').value = format(new Date(dateFrom), 'dd/MM/yyyy') // Start Date
-    worksheet.getCell('F2').value = format(new Date(dateTo), 'dd/MM/yyyy') // End Date
-
-    // 3. Get the template row (Row 6) to clone its styles
-    const templateRow = worksheet.getRow(6)
-
-    // 4. Fill the logs starting from Row 6
-    logs.forEach((log, index) => {
-      const rowIndex = 6 + index
-      const currentRow = worksheet.getRow(rowIndex)
+    try {
+      const machineName = machinery.find(m => m.machinery_id.toString() === selectedMachine)?.machinery_full_name
       
-      const rowData = [
-        log.date, // Col A: FECHA
-        log.operator_name, // Col B: OPERADOR
-        log.projects?.project_name, // Col C: PROYECTO
-        log.start_time, // Col D: HORA INICIO
-        log.end_time || '-', // Col E: HORA FIN
-        log.fuel_liters, // Col F: CARGA DE COMBUSTIBLE
-        log.fuel_price || '-', // Col G: PRECIO COMBUSTIBLE
-        log.observations || '' // Col H: OBSERVACIONES
-      ]
+      const response = await fetch('/templates/logbook_template.xlsx')
+      const arrayBuffer = await response.arrayBuffer()
+      
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.load(arrayBuffer)
+      
+      const worksheet = workbook.getWorksheet(1)
+      if (!worksheet) return
 
-      // Set values and copy styles from templateRow cell by cell
-      rowData.forEach((value, colIndex) => {
-        const colNumber = colIndex + 1
-        const targetCell = currentRow.getCell(colNumber)
-        const sourceCell = templateRow.getCell(colNumber)
+      worksheet.getCell('C4').value = machineName
+      worksheet.getCell('B2').value = format(new Date(dateFrom), 'dd/MM/yyyy')
+      worksheet.getCell('F2').value = format(new Date(dateTo), 'dd/MM/yyyy')
 
-        targetCell.value = value
+      const templateRow = worksheet.getRow(6)
 
-        // Clone every style property from the template (Row 6)
-        targetCell.style = { ...sourceCell.style }
+      logs.forEach((log, index) => {
+        const rowIndex = 6 + index
+        const currentRow = worksheet.getRow(rowIndex)
+        
+        const rowData = [
+          log.date,
+          log.operator_name,
+          log.projects?.project_name,
+          log.start_time,
+          log.end_time || '-',
+          log.fuel_liters,
+          log.fuel_price || '-',
+          log.observations || ''
+        ]
+
+        rowData.forEach((value, colIndex) => {
+          const colNumber = colIndex + 1
+          const targetCell = currentRow.getCell(colNumber)
+          const sourceCell = templateRow.getCell(colNumber)
+
+          targetCell.value = value
+          targetCell.style = { ...sourceCell.style }
+        })
+        
+        currentRow.commit()
       })
-      
-      currentRow.commit()
-    })
 
-    // 5. Generate and Download
-    const buffer = await workbook.xlsx.writeBuffer()
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const fileName = `Reporte_${machineName}_${dateFrom}_a_${dateTo}.xlsx`
-    saveAs(blob, fileName)
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const fileName = `Reporte_${machineName}_${dateFrom}_a_${dateTo}.xlsx`
+      saveAs(blob, fileName)
+    } catch (err) {
+      toast.error('Error exporting Excel');
+    }
   }
 
   return (
     <div className="space-y-6">
-      {/* Tab Switcher */}
       <div className="flex border-b border-gray-200">
         <button
           onClick={() => setActiveTab('table')}
@@ -228,7 +225,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          {dict.analytics.table_tab}
+          {t('analytics.table_tab')}
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
@@ -238,28 +235,26 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          {dict.analytics.analytics_tab}
+          {t('analytics.analytics_tab')}
         </button>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Machine Selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{dict.select_machine}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('select_machine')}</label>
             <select 
               value={selectedMachine}
               onChange={(e) => setSelectedMachine(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             >
-              <option value="">{activeTab === 'analytics' ? 'Toda la maquinaria' : common.select_placeholder}</option>
+              <option value="">{activeTab === 'analytics' ? t('analytics.all_machines') : common.select_placeholder}</option>
               {machinery.map(m => <option key={m.machinery_id} value={m.machinery_id}>{m.machinery_full_name}</option>)}
             </select>
           </div>
 
-          {/* Machine Type Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{dict.analytics.machinery_type}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('analytics.machinery_type')}</label>
             <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200">
               <button
                 onClick={() => setMachineType('all')}
@@ -267,7 +262,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
                   machineType === 'all' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
                 }`}
               >
-                {common.all}
+                {t('common.all')}
               </button>
               <button
                 onClick={() => setMachineType('owned')}
@@ -275,7 +270,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
                   machineType === 'owned' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
                 }`}
               >
-                {dict.analytics.owned_only}
+                {t('analytics.owned_only')}
               </button>
               <button
                 onClick={() => setMachineType('rented')}
@@ -283,13 +278,12 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
                   machineType === 'rented' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
                 }`}
               >
-                {dict.analytics.rented_only}
+                {t('analytics.rented_only')}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Row 2: Date range and Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Desde</label>
@@ -316,16 +310,20 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
                 className="flex items-center justify-center gap-2 flex-1 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 disabled:bg-gray-300 transition-colors"
               >
                 <Download size={18} />
-                {dict.export_pdf}
+                {t('export_pdf')}
               </button>
-              <button 
-                onClick={exportExcel}
-                disabled={logs.length === 0}
-                className="flex items-center justify-center gap-2 flex-1 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-300 transition-colors"
-              >
-                <Search size={18} />
-                {dict.export_excel || 'Exportar Excel'}
-              </button>
+              <div className="relative group flex-1">
+                <button 
+                  disabled={true}
+                  className="w-full flex items-center justify-center gap-2 py-2 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed transition-colors"
+                >
+                  <Download size={18} />
+                  {t('export_excel') || 'Exportar Excel'}
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity w-48 text-center pointer-events-none z-10">
+                  {t('feature.xlsx.premium.tooltip')}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -336,21 +334,21 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100 text-gray-900">
-                <th className="p-4 font-semibold">{dict.columns.date}</th>
-                <th className="p-4 font-semibold">{dict.columns.operator}</th>
-                <th className="p-4 font-semibold">{dict.columns.project}</th>
-                <th className="p-4 font-semibold">{dict.columns.start}</th>
-                <th className="p-4 font-semibold">{dict.columns.end}</th>
-                <th className="p-4 font-semibold">{dict.columns.fuel}</th>
-                <th className="p-4 font-semibold">{dict.columns.fuel_price}</th>
-                <th className="p-4 font-semibold">{dict.columns.observations}</th>
+                <th className="p-4 font-semibold">{t('columns.date')}</th>
+                <th className="p-4 font-semibold">{t('columns.operator')}</th>
+                <th className="p-4 font-semibold">{t('columns.project')}</th>
+                <th className="p-4 font-semibold">{t('columns.start')}</th>
+                <th className="p-4 font-semibold">{t('columns.end')}</th>
+                <th className="p-4 font-semibold">{t('columns.fuel')}</th>
+                <th className="p-4 font-semibold">{t('columns.fuel_price')}</th>
+                <th className="p-4 font-semibold">{t('columns.observations')}</th>
               </tr>
             </thead>
             <tbody className="text-gray-900">
               {loading ? (
-                <tr><td colSpan={8} className="p-8 text-center text-gray-500">{dict.loading}</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-gray-500">{t('loading')}</td></tr>
               ) : logs.length === 0 ? (
-                <tr><td colSpan={8} className="p-8 text-center text-gray-500">{selectedMachine ? dict.no_logs : 'Selecciona una máquina para ver la tabla'}</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-gray-500">{selectedMachine ? t('no_logs') : 'Selecciona una máquina para ver la tabla'}</td></tr>
               ) : (
                 logs.map(log => (
                   <tr key={log.machinery_log_id} className="border-b border-gray-50 hover:bg-gray-50/50">
@@ -369,7 +367,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
           </table>
         </div>
       ) : (
-        <LogbookAnalytics logs={logs} dict={dict} />
+        <LogbookAnalytics logs={logs} />
       )}
     </div>
   )

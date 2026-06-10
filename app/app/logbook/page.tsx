@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getDictionary } from '@/lib/i18n'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import AppDashboardWrapper from '@/app/components/AppDashboardWrapper'
+import AppDashboardWrapper from '../../components/AppDashboardWrapper'
 import LogoutButton from '@/app/components/LogoutButton'
 
 export default async function LogbookPage() {
@@ -32,7 +32,6 @@ export default async function LogbookPage() {
       {/* This wrapper is a Client Component that uses dynamic(..., { ssr: false }) */}
       <AppDashboardWrapper 
         machinery={machinery || []} 
-        dict={dict.admin}
         common={dict.common}
       />
     </div>

@@ -5,13 +5,14 @@ import * as d3 from 'd3-array'
 import ResponsiveBarChart from './charts/BarChart'
 import ResponsiveDonutChart from './charts/DonutChart'
 import { Fuel, Clock, Gauge, TrendingUp, DollarSign } from 'lucide-react'
+import { useTranslation } from '../../hooks/useTranslation'
 
 interface LogbookAnalyticsProps {
   logs: any[]
-  dict: any
 }
 
-export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) {
+export default function LogbookAnalytics({ logs }: LogbookAnalyticsProps) {
+  const { t } = useTranslation('admin')
   const [viewMode, setViewMode] = useState<'liters' | 'mxn'>('liters')
 
   const analyticsData = useMemo(() => {
@@ -113,7 +114,7 @@ export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) 
     return (
       <div className="bg-white p-12 rounded-xl border border-gray-100 text-center space-y-4">
         <TrendingUp size={48} className="mx-auto text-gray-300" />
-        <p className="text-gray-500 font-medium">{dict.analytics.no_data}</p>
+        <p className="text-gray-500 font-medium">{t('analytics.no_data')}</p>
       </div>
     )
   }
@@ -130,7 +131,7 @@ export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) 
             <Fuel size={24} />
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{dict.analytics.total_liters}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t('analytics.total_liters')}</p>
             <p className="text-2xl font-bold text-gray-900">{analyticsData.totals.liters.toFixed(2)} L</p>
           </div>
         </div>
@@ -139,7 +140,7 @@ export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) 
             <DollarSign size={24} />
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{dict.analytics.total_mxn}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t('analytics.total_mxn')}</p>
             <p className="text-2xl font-bold text-gray-900">${analyticsData.totals.cost.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
@@ -148,7 +149,7 @@ export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) 
             <Clock size={24} />
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{dict.analytics.kpi_utilization}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{t('analytics.kpi_utilization')}</p>
             <p className="text-2xl font-bold text-gray-900">{analyticsData.totals.hours.toFixed(1)} h</p>
           </div>
         </div>
@@ -185,7 +186,7 @@ export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) 
           {/* Fuel Consumption per Machine */}
           <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4 h-80">
             <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm uppercase tracking-wider text-gray-500">
-              {dict.analytics.kpi_fuel_machine}
+              {t('analytics.kpi_fuel_machine')}
             </h3>
             <div className="h-[calc(100%-2rem)]">
               <ResponsiveBarChart 
@@ -199,7 +200,7 @@ export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) 
           {/* Consumption per Project */}
           <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4 h-80">
             <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm uppercase tracking-wider text-gray-500">
-              {dict.analytics.kpi_fuel_project}
+              {t('analytics.kpi_fuel_project')}
             </h3>
             <div className="h-[calc(100%-2rem)]">
               <ResponsiveDonutChart data={currentProjectData} />
@@ -218,7 +219,7 @@ export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) 
           {/* Utilization per Machine */}
           <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4 h-80">
             <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm uppercase tracking-wider text-gray-500">
-              {dict.analytics.kpi_utilization}
+              {t('analytics.kpi_utilization')}
             </h3>
             <div className="h-[calc(100%-2rem)]">
               <ResponsiveBarChart data={analyticsData.hoursPerMachine} color="#f97316" yAxisLabel="Horas" />
@@ -228,7 +229,7 @@ export default function LogbookAnalytics({ logs, dict }: LogbookAnalyticsProps) 
           {/* Efficiency per Machine */}
           <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4 h-80">
             <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm uppercase tracking-wider text-gray-500">
-              {dict.analytics.kpi_efficiency}
+              {t('analytics.kpi_efficiency')}
             </h3>
             <div className="h-[calc(100%-2rem)]">
               <ResponsiveBarChart data={analyticsData.efficiencyPerMachine} color="#10b981" yAxisLabel="L/h" />

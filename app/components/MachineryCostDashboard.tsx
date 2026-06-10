@@ -222,13 +222,18 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
                 <RotateCcw size={20} />
                 {dict.admin.machinery_cost.clear}
               </button>
-              <button 
-                onClick={exportCSV}
-                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 shadow-md transition-all"
-              >
-                <Download size={20} />
-                {dict.admin.machinery_cost.export}
-              </button>
+              <div className="relative group">
+                <button 
+                  disabled={true}
+                  className="flex items-center gap-2 px-6 py-2 bg-gray-300 text-gray-500 rounded-lg font-semibold cursor-not-allowed transition-all"
+                >
+                  <Download size={20} />
+                  {dict.admin.machinery_cost.export}
+                </button>
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity w-48 text-center pointer-events-none z-10">
+                  {dict.feature.csv.premium.tooltip}
+                </div>
+              </div>
             </>
           )}
         </div>
