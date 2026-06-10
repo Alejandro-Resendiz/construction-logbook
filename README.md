@@ -54,6 +54,33 @@ This project uses the Supabase CLI to manage database changes via migrations.
 Admin and Resident users are managed via the Supabase Dashboard or local `seed.sql`.
 - Roles (`admin`, `resident`) must be stored in the user's `user_metadata`.
 
+## 🧪 Testing Suite
+
+This project includes unit/integration tests using **Jest** and End-to-End (E2E) tests using **Playwright**.
+
+### 1. Unit & Action Tests (Jest)
+Unit tests verify Next.js Server Actions and core logic in-memory. They **do not** require the Supabase emulator or dev server to be running.
+*   **Run once**: `npm run test`
+*   **Watch mode**: `npm run test:watch`
+
+### 2. End-to-End (E2E) Tests (Playwright)
+E2E tests verify the complete user flows in real browsers. They **do** require both the Next.js dev server and the Supabase emulator to be running.
+
+#### Preparation:
+1.  Add the test credentials in your `.env.local` file matching an admin user in your local database:
+    ```env
+    TEST_USER_EMAIL=your_local_email
+    TEST_USER_PASSWORD=your_local_password
+    ```
+2.  Start the Next.js dev server:
+    ```bash
+    npm run dev
+    ```
+
+#### Running Tests:
+*   **Run all tests**: `npx playwright test`
+*   **UI/Interactive Mode**: `npx playwright test --ui`
+
 ## 🚀 Deployment (Vercel)
 
 ### 1. Configure Environment
