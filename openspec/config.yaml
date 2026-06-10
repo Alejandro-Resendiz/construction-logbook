@@ -1,12 +1,13 @@
-strict_tdd: false
+strict_tdd: true
 context: |
   hiv-logbook is a Node.js/TypeScript, React, Next.js, Python project.
   Detected markers: package.json, tsconfig.json, npm package manager.
   Package managers: npm.
-  No reliable test runner was detected; verify testing manually before enabling strict TDD.
-  Unit tests: none.
-  Integration tests: none.
-  E2E tests: none.
+  Additional evidence: Test-like files detected (7); examples: app/actions.spec.ts, app/app/logbook/actions.spec.ts, app/app/maintenance/actions.spec.ts, app/app/projects/actions.spec.ts, app/log/update/actions.spec.ts.
+  Primary test command: npm test.
+  Unit tests: Jest (npm test); pytest (pytest).
+  Integration tests: Testing Library (npm test).
+  E2E tests: Playwright (npx playwright test).
 rules:
   proposal:
     require_problem_statement: true
@@ -17,25 +18,34 @@ rules:
   tasks:
     protect_review_workload: true
   apply:
-    test_command: ""
+    test_command: "npm test"
   verify:
-    test_command: ""
+    test_command: "npm test"
 testing:
   detected: "2026-06-10"
   runner:
-    command: ""
-    framework: ""
+    command: "npm test"
+    framework: "Jest"
   layers:
-    unit: ""
-    integration: ""
-    e2e: ""
+    unit: "Jest, pytest"
+    integration: "Testing Library"
+    e2e: "Playwright"
   commands:
     unit:
-      []
+      - scope: "."
+        command: "npm test"
+        framework: "Jest"
+      - scope: "."
+        command: "pytest"
+        framework: "pytest"
     integration:
-      []
+      - scope: "."
+        command: "npm test"
+        framework: "Testing Library"
     e2e:
-      []
+      - scope: "."
+        command: "npx playwright test"
+        framework: "Playwright"
   coverage:
     command: ""
     commands:
