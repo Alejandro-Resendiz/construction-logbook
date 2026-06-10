@@ -45,3 +45,5 @@ next-env.d.ts
 
 # LLMs
 .antigravitycli
+# Local Pi runtime state
+.atl/
