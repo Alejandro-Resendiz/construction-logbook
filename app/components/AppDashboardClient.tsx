@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getMachineryLogs } from '@/app/app/logbook/actions'
 import { Download, Search, Filter } from 'lucide-react'
 import { startOfWeek, endOfWeek, format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -38,28 +38,16 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
     }
     
     setLoading(true)
-    let query = supabase
-      .from('machinery_logs')
-      .select(`
-        *,
-        projects(project_name),
-        machinery(machinery_name, machinery_full_name, external_code, is_rented)
-      `)
-      .gte('date', dateFrom)
-      .lte('date', dateTo)
+    const machineId = selectedMachine ? parseInt(selectedMachine) : undefined
+    const res = await getMachineryLogs(machineId, dateFrom, dateTo)
 
-    if (selectedMachine) {
-      query = query.eq('machine_id', selectedMachine)
-    }
-
-    const { data, error } = await query.order('date', { ascending: true })
-
-    if (error) {
-      console.error(error)
+    if (res.error) {
+      console.error(res.error)
       setLogs([])
+      toast.error(res.error)
     } else {
       // Client-side filter for machine type (is_rented)
-      let filteredData = data || []
+      let filteredData = res.logs || []
       if (machineType === 'owned') {
         filteredData = filteredData.filter(log => !log.machinery?.is_rented)
       } else if (machineType === 'rented') {
