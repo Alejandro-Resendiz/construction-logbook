@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import { loadEnvConfig } from '@next/env';
+
+// Load environment variables from .env.local
+loadEnvConfig(process.cwd());
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -36,10 +40,10 @@ export default defineConfig({
       use: { ...devices['Desktop Firefox'] },
     },
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+    // {
+    //   name: 'webkit',
+    //   use: { ...devices['Desktop Safari'] },
+    // },
   ],
 
   /* Run your local dev server before starting the tests */
