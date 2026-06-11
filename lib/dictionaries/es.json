@@ -1,18 +1,18 @@
 {
   "banner": {
     "mvp": {
-      "message": "Esta aplicación es un Producto Mínimo Viable (MVP). Tu feedback es crucial para su evolución y nos ayuda a construir un producto que realmente necesitas."
+      "message": "Versión Beta. Tu retroalimentación es crucial para construir el producto que realmente necesitas."
     }
   },
   "feature": {
     "xlsx": {
       "premium": {
-        "tooltip": "La exportación a XLSX es una funcionalidad premium, disponible en futuras actualizaciones para potenciar tu gestión."
+        "tooltip": "Funcionalidad premium, disponible en futuras actualizaciones."
       }
     },
     "csv": {
       "premium": {
-        "tooltip": "La exportación a CSV es una funcionalidad premium, disponible en futuras actualizaciones para potenciar tu gestión."
+        "tooltip": "Funcionalidad premium, disponible en futuras actualizaciones."
       }
     }
   },

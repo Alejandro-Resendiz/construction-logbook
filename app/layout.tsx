@@ -4,7 +4,8 @@ import "./globals.css";
 import Navbar from "@/app/components/Navbar";
 import { getDictionary } from "@/lib/i18n";
 import { Toaster } from 'sonner';
-import MVPBanner from './components/ui/MVPBanner'; // Import MVPBanner
+import MVPBanner from '@/app/components/ui/MVPBanner';
+import Footer from '@/app/components/ui/Footer';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,19 +28,39 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const dict = getDictionary('es');
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Hivaco';
+  const email = process.env.NEXT_PUBLIC_BRAND_EMAIL || '';
+  const linkedin = process.env.NEXT_PUBLIC_BRAND_LINKEDIN || '';
 
   return (
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900 pb-10"> {/* Adjusted padding-bottom */}
+      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900 pt-10">
         <Toaster richColors position="top-right" />
-        <Navbar dict={dict} />
-        <div className="flex-1">
+        
+        <header className="sticky top-0 z-50 shadow-sm">
+          <MVPBanner lang="es" />
+          <Navbar dict={dict} />
+          <Footer 
+            brandName={brandName}
+            email={email}
+            linkedin={linkedin}
+            variant="compact"
+          />
+        </header>
+
+        <main className="flex-1">
           {children}
-        </div>
-        <MVPBanner lang="es" /> {/* Render MVPBanner */}
+        </main>
+
+        <Footer 
+          brandName={brandName}
+          email={email}
+          linkedin={linkedin}
+          variant="standard"
+        />
       </body>
     </html>
   );
