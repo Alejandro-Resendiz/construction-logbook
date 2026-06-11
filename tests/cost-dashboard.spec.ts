@@ -81,12 +81,15 @@ test.describe('Machinery Cost Dashboard E2E', () => {
     // (This string is currently hardcoded in the codebase component, so we keep it literal here)
     await expect(page.locator('text=Cálculos realizados con éxito')).toBeVisible();
 
+    // Wait for the table to be fully rendered and populated
+    await expect(page.locator('table')).toBeVisible();
+
     // Validate calculations columns are visible (using dictionary translations and scroll to fit viewports)
-    const totalCostHeader = page.locator(`text=${dict.admin.machinery_cost.total_cost_hr}`);
+    const totalCostHeader = page.getByText(dict.admin.machinery_cost.total_cost_hr);
     await totalCostHeader.scrollIntoViewIfNeeded();
     await expect(totalCostHeader).toBeVisible();
 
-    const rentRateHeader = page.locator(`text=${dict.admin.machinery_cost.rent_rate_hr}`);
+    const rentRateHeader = page.getByText(dict.admin.machinery_cost.rent_rate_hr);
     await rentRateHeader.scrollIntoViewIfNeeded();
     await expect(rentRateHeader).toBeVisible();
   });

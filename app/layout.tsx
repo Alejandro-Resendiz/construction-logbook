@@ -4,7 +4,7 @@ import "./globals.css";
 import Navbar from "@/app/components/Navbar";
 import { getDictionary } from "@/lib/i18n";
 import { Toaster } from 'sonner';
-import MVPBanner from '@/components/ui/MVPBanner'; // Import MVPBanner
+import MVPBanner from './components/ui/MVPBanner'; // Import MVPBanner
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

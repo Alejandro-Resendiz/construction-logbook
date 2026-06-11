@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
-import { useTranslation } from '../../hooks/useTranslation';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface MVPBannerProps {
   lang: 'es'; // Assuming 'es' for now, can be expanded
