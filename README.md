@@ -64,7 +64,7 @@ Unit tests verify Next.js Server Actions and core logic in-memory. They **do not
 *   **Watch mode**: `npm run test:watch`
 
 ### 2. End-to-End (E2E) Tests (Playwright)
-E2E tests verify the complete user flows in real browsers. They **do** require both the Next.js dev server and the Supabase emulator to be running.
+E2E tests verify the complete user flows in real browser environments across both desktop viewports (Chrome, Firefox) and mobile viewports (Mobile Chrome simulating a Pixel 5). They **do** require both the Next.js dev server and the Supabase emulator to be running.
 
 #### Preparation:
 1.  Add the test credentials in your `.env.local` file matching an admin user in your local database:
