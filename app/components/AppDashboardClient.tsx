@@ -320,7 +320,7 @@ export default function AppDashboardClient({ machinery, common }: AppDashboardCl
                   <Download size={18} />
                   {t('export_excel') || 'Exportar Excel'}
                 </button>
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity w-48 text-center pointer-events-none z-10">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity w-48 text-center pointer-events-none z-10">
                   {t('feature.xlsx.premium.tooltip')}
                 </div>
               </div>

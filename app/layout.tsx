@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/app/components/Navbar";
-import { getDictionary } from "@/lib/i18n";
 import { Toaster } from 'sonner';
-import MVPBanner from '@/app/components/ui/MVPBanner';
-import Footer from '@/app/components/ui/Footer';
+import { getDictionary } from "@/lib/i18n";
+import LayoutOrchestrator from "@/app/components/layouts/LayoutOrchestrator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,45 +20,30 @@ export const metadata: Metadata = {
   description: "SIGMA Machinery Logbook",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const dict = getDictionary('es');
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Hivaco';
-  const email = process.env.NEXT_PUBLIC_BRAND_EMAIL || '';
-  const linkedin = process.env.NEXT_PUBLIC_BRAND_LINKEDIN || '';
+  const dict = await getDictionary('es');
+  
+  const brandProps = {
+    brandName: process.env.NEXT_PUBLIC_BRAND_NAME || 'SIGMA Logbook',
+    publisher: process.env.NEXT_PUBLIC_BRAND_PUBLISHER || 'RMA',
+    email: process.env.NEXT_PUBLIC_BRAND_EMAIL || '',
+    linkedin: process.env.NEXT_PUBLIC_BRAND_LINKEDIN || '',
+  };
 
   return (
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900 pt-10">
+      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
         <Toaster richColors position="top-right" />
-        
-        <header className="sticky top-0 z-50 shadow-sm">
-          <MVPBanner lang="es" />
-          <Navbar dict={dict} />
-          <Footer 
-            brandName={brandName}
-            email={email}
-            linkedin={linkedin}
-            variant="compact"
-          />
-        </header>
-
-        <main className="flex-1">
+        <LayoutOrchestrator dict={dict} brandProps={brandProps}>
           {children}
-        </main>
-
-        <Footer 
-          brandName={brandName}
-          email={email}
-          linkedin={linkedin}
-          variant="standard"
-        />
+        </LayoutOrchestrator>
       </body>
     </html>
   );

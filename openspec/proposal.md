@@ -1,36 +1,37 @@
-### Propuesta: Reposicionamiento del Banner MVP e Implementación del Footer de Marca
+### Proposal: Adaptive Layout with Contextual Branding
 
-**1. Reposicionamiento del Banner MVP**
+**1. Goal**
+Implement a design system that adapts brand visibility and positioning based on the user's authentication state and device, ensuring key elements (MVP Banner and Footer) are accessible in context.
 
-* **Estado Actual**: El banner está fijo en `bottom-0`.
-* **Nuevo Estado**: El banner estará fijo en `top-0`.
-* **Implementación**:
-    * Actualizar `components/ui/MVPBanner.tsx` para usar `top-0` en lugar de `bottom-0`.
-    * Ajustar el layout para asegurar que el banner no se superponga con el `Navbar` o la parte superior del contenido. (Añadir `pt-[altura-del-banner]` al área de contenido principal).
+**2. User Scenarios**
 
-**2. Implementación del Footer de Marca**
+#### A. Unauthenticated Routes (Fixed Frame Model)
+* **Layout**: "Public Layout".
+* **Structure**: A fixed-height container (`h-screen`) where the Header (MVP Banner + Navbar) and Footer are **always visible** (fixed), and the central content is the only scrollable element.
+* **UX Goal**: Ensure the brand and MVP notice are always present while the user navigates public pages.
 
-* **Requerimiento**: Un nuevo componente `Footer` que contenga el nombre de la marca, el email y el enlace de LinkedIn.
-* **Contenido**: `<p>© 2026 [Nombre/Marca]. Hecho con ♥ en México.</p>`
-* **Contenido Dinámico (Variables de Entorno)**:
-    * `NEXT_PUBLIC_BRAND_NAME`: El nombre/marca a mostrar.
-    * `NEXT_PUBLIC_BRAND_EMAIL`: El enlace de email.
-    * `NEXT_PUBLIC_BRAND_LINKEDIN`: El enlace de LinkedIn.
-* **Implementación**:
-    * Crear `components/ui/Footer.tsx`.
-    * El footer se renderizará al final del `app/layout.tsx`.
-     else que el footer sea sutil y consistente con el diseño de la aplicación.
-    * Usar el hook `useTranslation` si alguna parte del texto del footer necesita ser internacionalizada (aunque la solicitud actual es texto fijo en español).
+#### B. Authenticated Routes (Dashboard Model)
+* **Layout**: "App Layout".
+* **Structure (Desktop)**: A 256px side sidebar (flex sibling) with navigation, branding, and account management (Role + Logout) grouped at the bottom. Main content uses natural page scroll (`min-h-screen`).
+* **Structure (Mobile)**: Top header with hamburger. Sliding sidenav with navigation, account, and branding at the bottom.
+* **UX Goal**: Provide a professional application experience with brand identity integrated into the navigation flow.
 
-**3. Criterios de Aceptación**
+**3. Technical Requirements**
 
-* [ ] El banner MVP es visible en la parte superior de la aplicación.
-* [ ] El footer es visible en la parte inferior de la aplicación.
-* [ ] El footer muestra el nombre de la marca, el email y el enlace de LinkedIn correctos provenientes de las variables de entorno.
-* [ ] El banner no se superpone con el `Navbar`.
-* [ ] El footer no se superpone con el contenido.
+* **Authentication Detection**: Use a `useAuth` hook to determine state and toggle between `PublicLayout` and `AppLayout` via a `LayoutOrchestrator`.
+* **Branding Component**: A versatile `Footer` component with variants (`page`, `sidebar`, `mobile-menu`) to adapt to each context. Displays `publisher` name from `NEXT_PUBLIC_BRAND_PUBLISHER`.
+* **Sidebar**: Includes icons in navigation (via `useNavLinks` + `iconMap`), user role block, and logout button. Anchored to the bottom with `UserAccountBlock`.
+* **MVP Banner**: Positioned at the top of each layout (`sticky`/natural flow), non-dismissible, with internationalized text.
 
-**Riesgos**
+**4. Acceptance Criteria**
 
-* **Desplazamientos de Layout**: Mover el banner de la parte inferior a la superior puede causar saltos en el contenido o que este quede oculto si el padding no se ajusta correctamente.
-* **Disponibilidad de Variables de Entorno**: Asegurar que las variables estén prefijadas con `NEXT_PUBLIC_` para que estén disponibles en el lado del cliente.
+* [x] On public routes, the MVP Banner and Footer are always visible (no scroll required to see them).
+* [x] On authenticated routes (desktop), branding and logout are anchored to the bottom of the sidebar.
+* [x] On mobile, branding appears at the end of the slide-out menu (sidenav).
+* [x] The Navbar remains visible on public routes.
+* [x] The desktop sidebar includes icons on each navigation link.
+* [x] Authenticated users visiting `/` are redirected to `/app`.
+* [x] The MVP banner is sticky (always visible when scrolling page content).
+* [x] The sidebar is fixed at 100vh (never grows with page content).
+* [x] The publisher name (`NEXT_PUBLIC_BRAND_PUBLISHER`) is displayed in all footer variants.
+* [x] All E2E tests pass on Chromium, Firefox, and Mobile Chrome (Pixel 5).

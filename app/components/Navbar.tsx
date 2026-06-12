@@ -3,38 +3,27 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Hammer, ShieldCheck, Settings, LogOut } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { Menu, X, Hammer, ShieldCheck, Settings } from 'lucide-react'
+import { useAuth } from '@/hooks/useAuth'
+import Footer from '@/app/components/ui/Footer'
 import LogoutButton from './LogoutButton'
 
 interface NavbarProps {
   dict: any
+  brandProps: {
+    brandName: string
+    publisher: string
+    email: string
+    linkedin: string
+  }
 }
 
-export default function Navbar({ dict }: NavbarProps) {
+export default function Navbar({ dict, brandProps }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [role, setRole] = useState<string | null>(null)
+  const { user, role } = useAuth()
   const pathname = usePathname()
-
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setRole(session?.user?.user_metadata?.role ?? null)
-    }
-
-    getSession()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setRole(session?.user?.user_metadata?.role ?? null)
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
   const isAdminRoute = pathname.startsWith('/app')
-  
+
   // Build dynamic navigation based on role
   let navLinks = []
 
@@ -62,13 +51,13 @@ export default function Navbar({ dict }: NavbarProps) {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <nav className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center gap-2">
               <Hammer className="h-8 w-8 text-blue-600" />
-              <span className="font-bold text-xl text-gray-900 tracking-tight">SIGMA Logbook</span>
+              <span className="font-bold text-xl text-gray-900 tracking-tight">{brandProps.brandName}</span>
             </Link>
           </div>
 
@@ -148,6 +137,10 @@ export default function Navbar({ dict }: NavbarProps) {
                 />
               </div>
             )}
+            {/* Mobile Branding */}
+            <div className="pt-2">
+              <Footer {...brandProps} variant="mobile-menu" />
+            </div>
           </div>
         </div>
       )}

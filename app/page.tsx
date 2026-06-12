@@ -1,8 +1,13 @@
-import { supabase } from '@/lib/supabase'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import { getDictionary } from '@/lib/i18n'
 import MachineryLogForm from '@/app/components/MachineryLogForm'
 
 export default async function NewLogPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/app')
+
   const dict = getDictionary('es')
 
   const { data: machinery, error: machError } = await supabase
