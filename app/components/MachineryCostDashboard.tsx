@@ -22,9 +22,30 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
   const [logs, setLogs] = useState<any[]>([])
   const [filterType, setFilterType] = useState<'all' | 'owned' | 'rented'>('all')
   
-  // Date Range
-  const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
-  const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const today = format(new Date(), 'yyyy-MM-dd')
+
+  const handleDateChange = (type: 'from' | 'to', value: string) => {
+    if (!value) return
+
+    if (value > today) {
+      toast.error(dict.common.notifications?.future_date_error || 'No se pueden seleccionar fechas futuras.')
+      return
+    }
+
+    if (type === 'from') {
+      if (dateTo && value > dateTo) {
+        toast.error(dict.common.notifications?.invalid_range_error || 'La fecha de inicio no puede ser posterior a la fecha de fin.')
+        return
+      }
+      setDateFrom(value)
+    } else {
+      if (dateFrom && value < dateFrom) {
+        toast.error(dict.common.notifications?.invalid_range_error || 'La fecha de fin no puede ser anterior a la fecha de inicio.')
+        return
+      }
+      setDateTo(value)
+    }
+  }
 
   // Inputs
   const [utilityPercent, setUtilityPercent] = useState<number>(20) // Default 20%
@@ -243,13 +264,13 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
           </label>
           <div className="grid grid-cols-2 gap-2">
             <input 
-              type="date" value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              type="date" value={dateFrom} max={today}
+              onChange={(e) => handleDateChange('from', e.target.value)}
               className="p-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
             />
             <input 
-              type="date" value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              type="date" value={dateTo} max={today}
+              onChange={(e) => handleDateChange('to', e.target.value)}
               className="p-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>

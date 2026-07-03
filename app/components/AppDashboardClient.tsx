@@ -74,21 +74,28 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
     fetchLogs()
   }, [selectedMachine, dateFrom, dateTo, machineType, activeTab])
 
-  // Validation: Max 7 days
+  // Validation: Prevent future dates and enforce valid range
   const handleDateChange = (type: 'from' | 'to', value: string) => {
-    const from = type === 'from' ? new Date(value) : new Date(dateFrom)
-    const to = type === 'to' ? new Date(value) : new Date(dateTo)
-    
-    const diffTime = Math.abs(to.getTime() - from.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    if (!value) return
 
-    if (diffDays > 7) {
-      toast.error(common.notifications?.max_range_error || 'El rango máximo es de 7 días.')
+    if (value > today) {
+      toast.error(common.notifications?.future_date_error || 'No se pueden seleccionar fechas futuras.')
       return
     }
 
-    if (type === 'from') setDateFrom(value)
-    else setDateTo(value)
+    if (type === 'from') {
+      if (dateTo && value > dateTo) {
+        toast.error(common.notifications?.invalid_range_error || 'La fecha de inicio no puede ser posterior a la fecha de fin.')
+        return
+      }
+      setDateFrom(value)
+    } else {
+      if (dateFrom && value < dateFrom) {
+        toast.error(common.notifications?.invalid_range_error || 'La fecha de fin no puede ser anterior a la fecha de inicio.')
+        return
+      }
+      setDateTo(value)
+    }
   }
 
   const exportPDF = () => {

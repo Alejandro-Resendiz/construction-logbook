@@ -232,6 +232,8 @@
       "error_update": "Error al actualizar",
       "error_delete": "Error al eliminar",
       "max_range_error": "El rango máximo es de 7 días.",
+      "future_date_error": "No se pueden seleccionar fechas futuras.",
+      "invalid_range_error": "La fecha de inicio no puede ser posterior a la fecha de fin.",
       "missing_fields": "Por favor complete los campos obligatorios.",
       "duplicate_error": "Este registro ya existe (duplicado).",
       "generic_error": "Ha ocurrido un error inesperado.",
