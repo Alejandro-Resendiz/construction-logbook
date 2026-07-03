@@ -21,6 +21,8 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
   const [projectData, setProjectData] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
   const [filterType, setFilterType] = useState<'all' | 'owned' | 'rented'>('all')
+  const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
+  const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'))
   
   const today = format(new Date(), 'yyyy-MM-dd')
 
