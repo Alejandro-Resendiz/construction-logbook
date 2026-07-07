@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createMachineryLog } from '@/app/actions'
 
 interface MachineryLogFormProps {
-  machinery: { machinery_id: number, machinery_full_name: string }[]
+  machinery: { machinery_id: number, machinery_full_name: string, machinery_serial_code?: string | null }[]
   projects: { project_id: number, project_name: string }[]
   dict: any
 }
@@ -12,6 +12,9 @@ interface MachineryLogFormProps {
 export default function MachineryLogForm({ machinery, projects, dict }: MachineryLogFormProps) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ hash_id?: string, error?: string } | null>(null)
+  const [selectedMachineId, setSelectedMachineId] = useState('')
+
+  const selectedMachine = machinery.find((m) => String(m.machinery_id) === selectedMachineId)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -55,6 +58,8 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
         <select 
           name="machine_id" 
           required 
+          value={selectedMachineId}
+          onChange={(e) => setSelectedMachineId(e.target.value)}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
         >
           <option value="">{dict.select_machinery}</option>
@@ -63,6 +68,20 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
           ))}
         </select>
       </div>
+
+      {selectedMachine?.machinery_serial_code && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {dict.serial_code}
+          </label>
+          <input 
+            type="text" 
+            readOnly 
+            value={selectedMachine.machinery_serial_code}
+            className="w-full p-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 outline-none text-gray-900 font-mono cursor-not-allowed"
+          />
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">{dict.project}</label>

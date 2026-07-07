@@ -15,6 +15,7 @@
     "title": "Registro de Maquinaria",
     "machinery": "Maquinaria",
     "select_machinery": "Selecciona maquinaria...",
+    "serial_code": "Serie",
     "project": "Proyecto",
     "select_project": "Selecciona proyecto...",
     "project_hint": "Si el proyecto no aparece, colócalo en observaciones después.",
