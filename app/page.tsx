@@ -1,17 +1,20 @@
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { getDictionary } from '@/lib/i18n'
 import MachineryLogForm from '@/app/components/MachineryLogForm'
 
 export default async function NewLogPage() {
   const dict = getDictionary('es')
+  const supabase = await createClient()
 
   const { data: machinery, error: machError } = await supabase
     .from('machinery')
     .select('machinery_id, machinery_full_name, machinery_serial_code')
+    .order('machinery_full_name', { ascending: true })
 
   const { data: projects, error: projError } = await supabase
     .from('projects')
     .select('project_id, project_name')
+    .order('project_name', { ascending: true })
 
   if (machError || projError) {
     console.error('Error fetching data:', machError || projError)
