@@ -5,8 +5,6 @@ import { supabase } from '@/lib/supabase'
 import { Download, Search, Filter } from 'lucide-react'
 import { startOfWeek, endOfWeek, format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { toast } from 'sonner'
@@ -98,7 +96,11 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
     }
   }
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
+    const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js') as any
+    const autoTableModule = await import('jspdf-autotable')
+    const autoTable = autoTableModule.default || autoTableModule
+
     const doc = new jsPDF()
     const machineName = machinery.find(m => m.machinery_id.toString() === selectedMachine)?.machinery_full_name
     
@@ -388,7 +390,14 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
           </table>
         </div>
       ) : (
-        <LogbookAnalytics logs={logs} dict={dict} />
+        <LogbookAnalytics 
+          logs={logs} 
+          dict={dict} 
+          dateFrom={dateFrom} 
+          dateTo={dateTo} 
+          selectedMachineName={machinery.find(m => m.machinery_id.toString() === selectedMachine)?.machinery_full_name || 'Toda la maquinaria'}
+          machineType={machineType}
+        />
       )}
     </div>
   )
