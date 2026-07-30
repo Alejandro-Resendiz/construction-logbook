@@ -268,27 +268,31 @@ export default function LogbookAnalytics({
       doc.text(`Consumo y Gastos (${viewMode === 'liters' ? 'Litros' : 'MXN'})`, 14, currentY)
 
       currentY += 4
-      const chartW = (pageWidth - 34) / 2
-      const chartH = 68
+      const fullChartW = pageWidth - 28
+      const stackedChartH = 62
 
       // Capture Fuel Chart
       const fuelSvg = fuelChartRef.current?.querySelector('svg')
       if (fuelSvg) {
         const pngUrl = await svgToPngDataUrl(fuelSvg as SVGSVGElement, 2)
-        doc.setFontSize(8)
-        doc.setTextColor(100, 100, 100)
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(71, 85, 105)
         doc.text(dict.analytics?.kpi_fuel_machine || 'Consumo por Máquina', 14, currentY + 4)
-        doc.addImage(pngUrl, 'PNG', 14, currentY + 6, chartW, chartH)
+        doc.addImage(pngUrl, 'PNG', 14, currentY + 6, fullChartW, stackedChartH)
       }
 
-      // Capture Project Chart
+      currentY += stackedChartH + 12
+
+      // Capture Project Chart (Placed below machine chart with full width for SVG legend)
       const projectSvg = projectChartRef.current?.querySelector('svg')
       if (projectSvg) {
         const pngUrl = await svgToPngDataUrl(projectSvg as SVGSVGElement, 2)
-        doc.setFontSize(8)
-        doc.setTextColor(100, 100, 100)
-        doc.text(dict.analytics?.kpi_fuel_project || 'Consumo por Proyecto', 14 + chartW + 6, currentY + 4)
-        doc.addImage(pngUrl, 'PNG', 14 + chartW + 6, currentY + 6, chartW, chartH)
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(71, 85, 105)
+        doc.text(dict.analytics?.kpi_fuel_project || 'Consumo por Proyecto', 14, currentY + 4)
+        doc.addImage(pngUrl, 'PNG', 14, currentY + 6, fullChartW, stackedChartH)
       }
 
       // PAGE 2: Performance & Utilization

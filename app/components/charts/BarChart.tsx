@@ -39,7 +39,7 @@ function BarChartContent({
   data,
   width,
   height,
-  margin = { top: 20, right: 20, bottom: 60, left: 60 },
+  margin = { top: 25, right: 25, bottom: 60, left: 60 },
   color = '#3b82f6',
   yAxisLabel,
 }: BarChartProps) {
@@ -52,8 +52,8 @@ function BarChartContent({
   } = useTooltip<DataItem>()
 
   // Bounds
-  const xMax = width - margin.left - margin.right
-  const yMax = height - margin.top - margin.bottom
+  const xMax = Math.max(width - margin.left - margin.right, 50)
+  const yMax = Math.max(height - margin.top - margin.bottom, 50)
 
   // Scales
   const xScale = useMemo(
@@ -72,7 +72,7 @@ function BarChartContent({
       scaleLinear<number>({
         range: [yMax, 0],
         round: true,
-        domain: [0, Math.max(...data.map((d) => d.value)) * 1.1 || 10],
+        domain: [0, Math.max(...data.map((d) => d.value)) * 1.15 || 10],
       }),
     [yMax, data]
   )
@@ -123,21 +123,34 @@ function BarChartContent({
           />
           {data.map((d) => {
             const barWidth = xScale.bandwidth()
-            const barHeight = yMax - (yScale(d.value) ?? 0)
-            const barX = xScale(d.label)
+            const barHeight = Math.max(yMax - (yScale(d.value) ?? 0), 0)
+            const barX = xScale(d.label) ?? 0
             const barY = yMax - barHeight
             return (
-              <Bar
-                key={`bar-${d.label}`}
-                x={barX}
-                y={barY}
-                width={barWidth}
-                height={barHeight}
-                fill={color}
-                rx={4}
-                onMouseMove={(event) => handleMouseOver(event, d)}
-                onMouseLeave={() => hideTooltip()}
-              />
+              <g key={`bar-group-${d.label}`}>
+                <Bar
+                  x={barX}
+                  y={barY}
+                  width={barWidth}
+                  height={barHeight}
+                  fill={color}
+                  rx={4}
+                  onMouseMove={(event) => handleMouseOver(event, d)}
+                  onMouseLeave={() => hideTooltip()}
+                />
+                {d.value > 0 && (
+                  <text
+                    x={barX + barWidth / 2}
+                    y={barY - 4}
+                    fill="#374151"
+                    fontSize={9}
+                    fontWeight="bold"
+                    textAnchor="middle"
+                  >
+                    {d.value > 10000 ? `${(d.value / 1000).toFixed(1)}k` : d.value.toFixed(1)}
+                  </text>
+                )}
+              </g>
             )
           })}
         </Group>

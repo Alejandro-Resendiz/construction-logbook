@@ -5,7 +5,6 @@ import Pie from '@visx/shape/lib/shapes/Pie'
 import { Group } from '@visx/group'
 import { ParentSize } from '@visx/responsive'
 import { scaleOrdinal } from '@visx/scale'
-import { LegendOrdinal, LegendItem } from '@visx/legend'
 import { useTooltip, TooltipWithBounds, defaultStyles } from '@visx/tooltip'
 import { localPoint } from '@visx/event'
 
@@ -41,7 +40,7 @@ function DonutChartContent({
   data,
   width,
   height,
-  margin = { top: 20, right: 20, bottom: 20, left: 20 },
+  margin = { top: 20, right: 140, bottom: 20, left: 20 },
 }: DonutChartProps) {
   const {
     showTooltip,
@@ -51,12 +50,13 @@ function DonutChartContent({
     tooltipTop,
   } = useTooltip<DataItem>()
 
-  const innerWidth = width - margin.left - margin.right
-  const innerHeight = height - margin.top - margin.bottom
+  const legendWidth = width > 350 ? 140 : 100
+  const innerWidth = Math.max(width - margin.left - legendWidth, 100)
+  const innerHeight = Math.max(height - margin.top - margin.bottom, 100)
   const radius = Math.min(innerWidth, innerHeight) / 2
   const centerY = innerHeight / 2
   const centerX = innerWidth / 2
-  const donutThickness = 40
+  const donutThickness = Math.min(40, radius * 0.45)
 
   const colorScale = useMemo(
     () =>
@@ -111,30 +111,28 @@ function DonutChartContent({
             }}
           </Pie>
         </Group>
+
+        {/* SVG-native Legend (Exports cleanly into PDF PNG captures) */}
+        <Group top={margin.top + 10} left={innerWidth + 15}>
+          {data.slice(0, 8).map((d, i) => {
+            const displayLabel = d.label.length > 18 ? `${d.label.slice(0, 16)}...` : d.label
+            return (
+              <g key={`legend-svg-${d.label}-${i}`} transform={`translate(0, ${i * 20})`}>
+                <rect width={10} height={10} rx={2} fill={colorScale(d.label)} />
+                <text 
+                  x={16} 
+                  y={9} 
+                  fontSize={10} 
+                  fontWeight="bold" 
+                  fill="#4b5563"
+                >
+                  {displayLabel}
+                </text>
+              </g>
+            )
+          })}
+        </Group>
       </svg>
-      
-      {/* Basic Legend */}
-      <div className="absolute top-0 right-0 p-2 overflow-y-auto max-h-full">
-        <LegendOrdinal scale={colorScale}>
-          {(labels) => (
-            <div className="flex flex-col gap-1">
-              {labels.map((label, i) => (
-                <LegendItem key={`legend-${i}`} margin="0 5px">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: label.value }} 
-                    />
-                    <div className="text-[10px] font-bold text-gray-600 truncate max-w-[100px]">
-                      {label.text}
-                    </div>
-                  </div>
-                </LegendItem>
-              ))}
-            </div>
-          )}
-        </LegendOrdinal>
-      </div>
 
       {tooltipData && (
         <TooltipWithBounds
