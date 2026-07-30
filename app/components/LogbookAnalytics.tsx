@@ -5,7 +5,7 @@ import * as d3 from 'd3-array'
 import { toast } from 'sonner'
 import ResponsiveBarChart from './charts/BarChart'
 import ResponsiveDonutChart from './charts/DonutChart'
-import { Fuel, Clock, Gauge, TrendingUp, DollarSign, Download, Loader2 } from 'lucide-react'
+import { Fuel, Clock, Gauge, TrendingUp, DollarSign, Download, Loader2, Table as TableIcon } from 'lucide-react'
 import { svgToPngDataUrl, addPdfFooters } from '@/lib/pdf/chartExporter'
 
 interface LogbookAnalyticsProps {
@@ -113,6 +113,40 @@ export default function LogbookAnalytics({
       ([label, value]) => ({ label, value, name: label })
     ).sort((a, b) => b.value - a.value)
 
+    // 5. Detailed Breakdown by Machine, Project, and Operator
+    const breakdownMap = new Map<string, {
+      machineLabel: string
+      machineName: string
+      projectLabel: string
+      operatorName: string
+      fuelLiters: number
+      totalCost: number
+      hours: number
+    }>()
+
+    processedLogs.forEach(log => {
+      const opName = log.operator_name || 'Sin operador'
+      const key = `${log.machineLabel}|${log.projectLabel}|${opName}`
+      const existing = breakdownMap.get(key)
+      if (existing) {
+        existing.fuelLiters += log.fuel_liters || 0
+        existing.totalCost += log.cost || 0
+        existing.hours += log.hours || 0
+      } else {
+        breakdownMap.set(key, {
+          machineLabel: log.machineLabel,
+          machineName: log.machineName,
+          projectLabel: log.projectLabel,
+          operatorName: opName,
+          fuelLiters: log.fuel_liters || 0,
+          totalCost: log.cost || 0,
+          hours: log.hours || 0
+        })
+      }
+    })
+
+    const detailedBreakdown = Array.from(breakdownMap.values()).sort((a, b) => b.totalCost - a.totalCost)
+
     return {
       fuelPerMachine,
       costPerMachine,
@@ -120,6 +154,7 @@ export default function LogbookAnalytics({
       efficiencyPerMachine,
       fuelPerProject,
       costPerProject,
+      detailedBreakdown,
       totals: {
         liters: d3.sum(processedLogs, d => d.fuel_liters),
         cost: d3.sum(processedLogs, d => d.cost),
@@ -134,6 +169,9 @@ export default function LogbookAnalytics({
 
     try {
       const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js') as any
+      const autoTableModule = await import('jspdf-autotable')
+      const autoTable = autoTableModule.default || autoTableModule
+
       const doc = new jsPDF('p', 'mm', 'a4')
       const pageWidth = doc.internal.pageSize.getWidth()
 
@@ -165,7 +203,7 @@ export default function LogbookAnalytics({
       doc.setFont('helvetica', 'bold')
       doc.text(`Maquinaria:`, 95, 38)
       doc.setFont('helvetica', 'normal')
-      doc.text(selectedMachineName, 118, 38)
+      doc.text(selectedMachineName, 118, 38, { maxWidth: 75 })
 
       doc.setFont('helvetica', 'bold')
       doc.text(`Tipo:`, 18, 45)
@@ -192,23 +230,23 @@ export default function LogbookAnalytics({
       doc.roundedRect(14, currentY, cardWidth, 18, 2, 2, 'F')
       doc.setFontSize(8)
       doc.setTextColor(100, 116, 139)
-      doc.text('TOTAL CONSUMO', 18, currentY + 6)
+      doc.text('TOTAL CONSUMO DIESEL', 18, currentY + 6)
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(29, 78, 216)
       doc.text(`${analyticsData.totals.liters.toFixed(2)} L`, 18, currentY + 13)
 
-      // KPI 2: MXN
+      // KPI 2: MXN (Gasto Total Diesel)
       doc.setFillColor(240, 253, 244)
       doc.roundedRect(14 + cardWidth + 6, currentY, cardWidth, 18, 2, 2, 'F')
       doc.setFontSize(8)
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(100, 116, 139)
-      doc.text('GASTO TOTAL', 18 + cardWidth + 6, currentY + 6)
+      doc.text('GASTO TOTAL DIESEL', 18 + cardWidth + 6, currentY + 6)
       doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(21, 128, 61)
-      doc.text(`$${analyticsData.totals.cost.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, 18 + cardWidth + 6, currentY + 13)
+      doc.text(`$${analyticsData.totals.cost.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`, 18 + cardWidth + 6, currentY + 13)
 
       // KPI 3: Hours
       doc.setFillColor(255, 247, 237)
@@ -283,6 +321,49 @@ export default function LogbookAnalytics({
         doc.addImage(pngUrl, 'PNG', 14, p2Y + 4, pageWidth - 28, 85)
       }
 
+      // PAGE 3: Detailed Table (Máquina, Proyecto, Operador, Gasto Total de Diesel)
+      doc.addPage()
+      let p3Y = 20
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(30, 41, 59)
+      doc.text('Desglose Operativo: Máquina, Proyecto, Operador y Gasto Diesel', 14, p3Y)
+
+      const tableColumns = [
+        'Máquina',
+        'Proyecto',
+        'Operador',
+        'Diesel (L)',
+        'Gasto Total Diesel ($ MXN)',
+        'Horas (h)'
+      ]
+
+      const tableRows = analyticsData.detailedBreakdown.map(row => [
+        `${row.machineLabel}\n${row.machineName}`,
+        row.projectLabel,
+        row.operatorName,
+        `${row.fuelLiters.toFixed(2)} L`,
+        `$${row.totalCost.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+        `${row.hours.toFixed(1)} h`
+      ])
+
+      autoTable(doc, {
+        head: [tableColumns],
+        body: tableRows,
+        startY: p3Y + 6,
+        theme: 'grid',
+        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        columnStyles: {
+          0: { cellWidth: 38, fontStyle: 'bold', overflow: 'linebreak' },
+          1: { cellWidth: 34, overflow: 'linebreak' },
+          2: { cellWidth: 34, fontStyle: 'bold', overflow: 'linebreak' },
+          3: { cellWidth: 24, halign: 'right' },
+          4: { cellWidth: 34, halign: 'right', fontStyle: 'bold', textColor: [21, 128, 61] },
+          5: { cellWidth: 18, halign: 'right' }
+        }
+      })
+
       addPdfFooters(doc, 'Hivaco Logbook - Reporte Visual Analytics')
       const fileName = `Reporte_Analytics_${dateFrom || 'General'}_a_${dateTo || 'General'}.pdf`
       doc.save(fileName)
@@ -350,7 +431,7 @@ export default function LogbookAnalytics({
             <DollarSign size={24} />
           </div>
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{dict.analytics?.total_mxn}</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Gasto Total de Diesel</p>
             <p className="text-2xl font-bold text-gray-900">${analyticsData.totals.cost.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
@@ -445,6 +526,44 @@ export default function LogbookAnalytics({
               <ResponsiveBarChart data={analyticsData.efficiencyPerMachine} color="#10b981" yAxisLabel="L/h" />
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Detailed Breakdown Section (Máquina, Proyecto, Operador, Gasto Total Diesel) */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <TableIcon className="text-blue-600" />
+          Desglose Operativo por Máquina, Proyecto y Operador
+        </h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100 text-gray-600">
+                <th className="p-4 font-bold uppercase text-[10px]">Máquina</th>
+                <th className="p-4 font-bold uppercase text-[10px]">Proyecto</th>
+                <th className="p-4 font-bold uppercase text-[10px]">Operador</th>
+                <th className="p-4 font-bold uppercase text-[10px] text-right">Litros Diesel</th>
+                <th className="p-4 font-bold uppercase text-[10px] text-right">Gasto Total Diesel ($ MXN)</th>
+                <th className="p-4 font-bold uppercase text-[10px] text-right">Horas</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-900">
+              {analyticsData.detailedBreakdown.map((row, index) => (
+                <tr key={index} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                  <td className="p-4 font-bold">
+                    {row.machineLabel} <span className="text-xs font-normal text-gray-500">({row.machineName})</span>
+                  </td>
+                  <td className="p-4">{row.projectLabel}</td>
+                  <td className="p-4 font-medium text-gray-800">{row.operatorName}</td>
+                  <td className="p-4 font-mono text-right">{row.fuelLiters.toFixed(2)} L</td>
+                  <td className="p-4 font-mono font-bold text-green-700 text-right">
+                    ${row.totalCost.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td className="p-4 font-mono text-right">{row.hours.toFixed(1)} h</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
