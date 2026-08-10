@@ -96,6 +96,10 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
     }
   }
 
+  const nonZeroPrices = logs.filter(l => Number(l.fuel_price) > 0).map(l => Number(l.fuel_price))
+  const calculatedAvgPrice = nonZeroPrices.length > 0 ? nonZeroPrices.reduce((a, b) => a + b, 0) / nonZeroPrices.length : 24.50
+  const fallbackPrice = Number(calculatedAvgPrice.toFixed(2))
+
   const exportPDF = async () => {
     const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js') as any
     const autoTableModule = await import('jspdf-autotable')
@@ -123,17 +127,28 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
       dict.columns.signature
     ]
     
-    const tableRows = logs.map(log => [
-      log.date,
-      log.operator_name,
-      log.projects?.project_name,
-      log.start_time,
-      log.end_time || '-',
-      log.fuel_liters,
-      log.fuel_price || '-',
-      log.observations || '',
-      '' // Empty for signature
-    ])
+    let usedFallbackInPdf = false
+
+    const tableRows = logs.map(log => {
+      let priceStr = '-'
+      if (log.fuel_price) {
+        priceStr = `$${Number(log.fuel_price).toFixed(2)}`
+      } else {
+        usedFallbackInPdf = true
+        priceStr = `$${fallbackPrice.toFixed(2)} (Est.)`
+      }
+      return [
+        log.date,
+        log.operator_name,
+        log.projects?.project_name,
+        log.start_time,
+        log.end_time || '-',
+        log.fuel_liters,
+        priceStr,
+        log.observations || '',
+        '' // Empty for signature
+      ]
+    })
 
     autoTable(doc, {
       head: [tableColumn],
@@ -149,15 +164,15 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
         3: { cellWidth: 15 },
         4: { cellWidth: 15 },
         5: { cellWidth: 20 },
-        6: { cellWidth: 15 },
+        6: { cellWidth: 20 },
         7: { overflow: 'linebreak' },
-        8: { cellWidth: 25 }
+        8: { cellWidth: 22 }
       }
     })
 
     // Signatures at bottom
     // @ts-ignore
-    const finalY = doc.lastAutoTable.finalY + 30
+    const finalY = doc.lastAutoTable.finalY + 25
     
     // Line 1: Operator
     const line1Start = 20
@@ -173,6 +188,12 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
     const line2Center = line2Start + (line2End - line2Start) / 2
     doc.line(line2Start, finalY, line2End, finalY)
     doc.text(dict.signatures.admin, line2Center, finalY + 5, { align: 'center' })
+
+    if (usedFallbackInPdf) {
+      doc.setFontSize(7)
+      doc.setTextColor(180, 83, 9)
+      doc.text('* (Est.) Indica precio de referencia sugerido para registros sin costo de origen.', 14, finalY + 14)
+    }
 
     const fileName = `Reporte_${machineName}_${dateFrom}_a_${dateTo}.pdf`
     doc.save(fileName)
@@ -381,7 +402,16 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
                     <td className="p-4 text-sm font-mono">{log.start_time}</td>
                     <td className="p-4 text-sm font-mono">{log.end_time || '-'}</td>
                     <td className="p-4 text-sm">{log.fuel_liters}</td>
-                    <td className="p-4 text-sm font-mono">{log.fuel_price ? `$${log.fuel_price}` : '-'}</td>
+                    <td className="p-4 text-sm font-mono">
+                      {log.fuel_price ? (
+                        `$${Number(log.fuel_price).toFixed(2)}`
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5" title="Precio estimado de referencia (sin registro original)">
+                          <span className="text-gray-700">${fallbackPrice.toFixed(2)}</span>
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 rounded">Est.</span>
+                        </span>
+                      )}
+                    </td>
                     <td className="p-4 text-sm text-gray-700 italic max-w-xs truncate">{log.observations}</td>
                   </tr>
                 ))

@@ -150,7 +150,9 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
           type="number" 
           step="0.01" 
           name="fuel_price" 
-          placeholder={dict.fuel_price_placeholder}
+          required
+          defaultValue="24.50"
+          placeholder={dict.fuel_price_placeholder || "24.50"}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
         />
       </div>

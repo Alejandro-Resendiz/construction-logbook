@@ -47,10 +47,14 @@ export default function LogbookAnalytics({
       return diff > 0 ? diff : 0
     }
 
+    const nonZeroPrices = logs.filter(l => Number(l.fuel_price) > 0).map(l => Number(l.fuel_price))
+    const calculatedAvgPrice = nonZeroPrices.length > 0 ? nonZeroPrices.reduce((a, b) => a + b, 0) / nonZeroPrices.length : 24.50
+    const fallbackPrice = Number(calculatedAvgPrice.toFixed(2))
+
     const processedLogs = logs.map(log => ({
       ...log,
       hours: getHours(log.start_time, log.end_time),
-      cost: (log.fuel_liters || 0) * (log.fuel_price || 0),
+      cost: (log.fuel_liters || 0) * (log.fuel_price ? Number(log.fuel_price) : fallbackPrice),
       machineLabel: log.machinery?.external_code || `M-${log.machine_id}`,
       machineName: log.machinery?.machinery_name || `M-${log.machine_id}`,
       projectLabel: log.projects?.project_name || `P-${log.project_id}`
