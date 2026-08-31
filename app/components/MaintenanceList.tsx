@@ -3,20 +3,20 @@
 import { useState, useMemo } from 'react'
 import { 
   Search, 
-  Filter, 
   ChevronDown, 
   ChevronRight, 
   Edit2, 
-  CheckCircle2, 
-  XCircle, 
-  Clock,
+  Paperclip,
   ExternalLink,
-  Wrench,
-  Paperclip
+  FileText,
+  Loader2,
+  DollarSign,
+  Building2
 } from 'lucide-react'
 import { updateMaintenanceStatus } from '@/app/app/maintenance/actions'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { addPdfFooters } from '@/lib/pdf/chartExporter'
 
 interface MaintenanceListProps {
   initialRequests: any[]
@@ -30,6 +30,7 @@ export default function MaintenanceList({ initialRequests, machinery, dict, role
   const [machineFilter, setMachineFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
 
   const isAdmin = role === 'admin'
 
@@ -39,12 +40,17 @@ export default function MaintenanceList({ initialRequests, machinery, dict, role
       const matchesStatus = statusFilter === 'all' || r.status === statusFilter
       const matchesSearch = searchQuery === '' || 
         r.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (r.project_name && r.project_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
         r.machinery?.machinery_full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.machinery?.external_code.toLowerCase().includes(searchQuery.toLowerCase())
       
       return matchesMachine && matchesStatus && matchesSearch
     })
   }, [requests, machineFilter, statusFilter, searchQuery])
+
+  const grandTotalPaid = useMemo(() => {
+    return filteredRequests.reduce((acc, r) => acc + (r.total_paid || 0), 0)
+  }, [filteredRequests])
 
   const handleStatusUpdate = async (id: number, newStatus: string) => {
     const res = await updateMaintenanceStatus(id, newStatus as any)
@@ -58,42 +64,218 @@ export default function MaintenanceList({ initialRequests, machinery, dict, role
     }
   }
 
+  const handleExportPdf = async () => {
+    if (filteredRequests.length === 0) {
+      toast.error('No hay registros de mantenimiento para exportar.')
+      return
+    }
+
+    setIsExportingPdf(true)
+    try {
+      const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js') as any
+      const autoTableModule = await import('jspdf-autotable')
+      const autoTable = autoTableModule.default || autoTableModule
+
+      const doc = new jsPDF('p', 'mm', 'a4')
+      const pageWidth = doc.internal.pageSize.getWidth()
+
+      // Header Banner
+      doc.setFillColor(37, 99, 235) // Primary Blue
+      doc.rect(0, 0, pageWidth, 24, 'F')
+
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(16)
+      doc.setFont('helvetica', 'bold')
+      doc.text('Reporte de Servicios de Mantenimiento', 14, 16)
+
+      // Metadata card
+      doc.setTextColor(50, 50, 50)
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+
+      const selectedMachineObj = machinery.find(m => m.machinery_id.toString() === machineFilter)
+      const machineText = selectedMachineObj ? `[${selectedMachineObj.external_code}] ${selectedMachineObj.machinery_full_name}` : 'Todas'
+      const statusText = statusFilter === 'all' ? 'Todos los estados' : statusFilter === 'approved' ? 'Aprobados' : statusFilter === 'pending' ? 'Pendientes' : 'Rechazados'
+
+      doc.setFillColor(248, 250, 252)
+      doc.roundedRect(14, 30, pageWidth - 28, 24, 2, 2, 'F')
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(`Fecha de Emisión:`, 18, 38)
+      doc.setFont('helvetica', 'normal')
+      doc.text(new Date().toLocaleDateString('es-MX'), 48, 38)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(`Filtrado Maquinaria:`, 110, 38)
+      doc.setFont('helvetica', 'normal')
+      doc.text(machineText, 142, 38, { maxWidth: 50 })
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(`Estado Servicios:`, 18, 46)
+      doc.setFont('helvetica', 'normal')
+      doc.text(statusText, 48, 46)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(`Total Pagado Filtrado:`, 110, 46)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(21, 128, 61)
+      doc.text(`$${grandTotalPaid.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`, 142, 46)
+
+      // Table columns & rows
+      let currentY = 60
+      const tableColumns = [
+        'Fecha',
+        'Máquina',
+        'Tipo',
+        'Proyecto',
+        'Descripción',
+        'Estado',
+        'Total Pagado ($ MXN)'
+      ]
+
+      const tableRows = filteredRequests.map(r => {
+        const machineStr = `${r.machinery?.external_code || 'M'}\n${r.machinery?.machinery_name || ''}`
+        const typeStr = `${r.maintenance_type === 'preventive' ? 'Preventivo' : 'Correctivo'}${r.is_external ? ' (Ext.)' : ''}`
+        const statusLabel = r.status === 'approved' ? 'Aprobado' : r.status === 'rejected' ? 'Rechazado' : 'Pendiente'
+        const paidStr = `$${(r.total_paid || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+
+        return [
+          r.date,
+          machineStr,
+          typeStr,
+          r.project_name || 'Sin proyecto',
+          r.description,
+          statusLabel,
+          paidStr
+        ]
+      })
+
+      // Add Grand Total summary row
+      tableRows.push([
+        'TOTAL',
+        '',
+        '',
+        `Servicios: ${filteredRequests.length}`,
+        '',
+        '',
+        `$${grandTotalPaid.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`
+      ])
+
+      autoTable(doc, {
+        head: [tableColumns],
+        body: tableRows,
+        startY: currentY + 4,
+        theme: 'grid',
+        headStyles: { fillColor: [37, 99, 235], textColor: 255, fontSize: 8 },
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        columnStyles: {
+          0: { cellWidth: 18 },
+          1: { cellWidth: 26, fontStyle: 'bold', overflow: 'linebreak' },
+          2: { cellWidth: 22, overflow: 'linebreak' },
+          3: { cellWidth: 30, overflow: 'linebreak' },
+          4: { cellWidth: 40, overflow: 'linebreak' },
+          5: { cellWidth: 20, fontStyle: 'bold' },
+          6: { cellWidth: 28, halign: 'right', fontStyle: 'bold', textColor: [21, 128, 61] }
+        },
+        didParseCell: (data: any) => {
+          // Highlight final summary row
+          if (data.row.index === tableRows.length - 1) {
+            data.cell.styles.fontStyle = 'bold'
+            data.cell.styles.fillColor = [240, 253, 244]
+          }
+        }
+      })
+
+      addPdfFooters(doc, 'Hivaco Logbook - Reporte de Mantenimiento')
+      doc.save(`Reporte_Mantenimiento_${new Date().toISOString().split('T')[0]}.pdf`)
+      toast.success('Reporte PDF descargado con éxito')
+    } catch (err) {
+      console.error('Error al generar PDF de mantenimiento:', err)
+      toast.error('No se pudo generar el reporte PDF')
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4">
-        <div className="flex-1 relative">
+      {/* Filter Bar & Export Actions */}
+      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div className="flex-1 w-full relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
           <input 
             type="text" 
-            placeholder="Buscar por descripción o máquina..."
+            placeholder="Buscar por descripción, máquina u obra..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
           />
         </div>
-        <select 
-          value={machineFilter}
-          onChange={(e) => setMachineFilter(e.target.value)}
-          className="md:w-64 p-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-        >
-          <option value="">{dict.admin.select_machine}</option>
-          {machinery.map(m => (
-            <option key={m.machinery_id} value={m.machinery_id}>
-              [{m.external_code}] {m.machinery_name}
-            </option>
-          ))}
-        </select>
-        <select 
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="md:w-48 p-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-        >
-          <option value="all">Todos los estados</option>
-          <option value="pending">{dict.maintenance.pending}</option>
-          <option value="approved">{dict.maintenance.approved}</option>
-          <option value="rejected">{dict.maintenance.rejected}</option>
-        </select>
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <select 
+            value={machineFilter}
+            onChange={(e) => setMachineFilter(e.target.value)}
+            className="p-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="">{dict.admin.select_machine}</option>
+            {machinery.map(m => (
+              <option key={m.machinery_id} value={m.machinery_id}>
+                [{m.external_code}] {m.machinery_full_name}
+              </option>
+            ))}
+          </select>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="p-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="all">Todos los estados</option>
+            <option value="pending">{dict.maintenance.pending}</option>
+            <option value="approved">{dict.maintenance.approved}</option>
+            <option value="rejected">{dict.maintenance.rejected}</option>
+          </select>
+          <button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf || filteredRequests.length === 0}
+            className="flex items-center justify-center gap-2 px-5 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 disabled:bg-gray-300 shadow-sm transition-all whitespace-nowrap"
+          >
+            {isExportingPdf ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Generando...
+              </>
+            ) : (
+              <>
+                <FileText size={16} />
+                Exportar PDF
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Summary KPI Strip */}
+      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+            <Building2 size={20} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase">Servicios Registrados</p>
+            <p className="text-lg font-bold text-gray-900">{filteredRequests.length}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+            <DollarSign size={20} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase">Total Pagado Filtrado</p>
+            <p className="text-lg font-bold text-green-700">
+              ${grandTotalPaid.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Table */}
@@ -105,9 +287,9 @@ export default function MaintenanceList({ initialRequests, machinery, dict, role
               <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">{dict.maintenance.date}</th>
               <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">{dict.maintenance.machinery}</th>
               <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">{dict.maintenance.type}</th>
+              <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">Proyecto</th>
               <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">{dict.maintenance.description}</th>
-              <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">{dict.maintenance.worked_time}</th>
-              <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">{dict.maintenance.next_maintenance}</th>
+              <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">Total Pagado</th>
               <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">{dict.maintenance.status}</th>
               <th className="p-4"></th>
             </tr>
@@ -176,9 +358,13 @@ function MaintenanceRow({ req, dict, isAdmin, onStatusUpdate }: { req: any, dict
             )}
           </div>
         </td>
+        <td className="p-4 text-sm">
+          <div className="font-bold text-gray-800">{req.project_name || 'Sin proyecto'}</div>
+        </td>
         <td className="p-4 text-sm max-w-xs truncate">{req.description}</td>
-        <td className="p-4 text-sm">{req.worked_time}h</td>
-        <td className="p-4 text-sm whitespace-nowrap">{req.next_maintenance_date || '-'}</td>
+        <td className="p-4 text-sm font-mono font-bold text-green-700 text-right">
+          ${(req.total_paid || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+        </td>
         <td className="p-4 text-sm">
           {isAdmin ? (
             <select 

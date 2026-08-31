@@ -18,10 +18,10 @@ export default async function MaintenancePage() {
 
   const { data: machinery } = await supabase
     .from('machinery')
-    .select('machinery_id, machinery_full_name, external_code')
+    .select('machinery_id, machinery_full_name, external_code, machinery_name')
     .order('machinery_full_name')
 
-  // Initial fetch of requests
+  // Fetch all maintenance requests
   const { data: requests } = await supabase
     .from('maintenance_requests')
     .select(`
@@ -29,6 +29,28 @@ export default async function MaintenancePage() {
       machinery(machinery_name, machinery_full_name, external_code)
     `)
     .order('date', { ascending: false })
+
+  // Fetch machinery logs with project info to resolve Obra / Proyecto dynamically by machine and date
+  const { data: logs } = await supabase
+    .from('machinery_logs')
+    .select('machine_id, date, projects(project_name)')
+    .order('date', { ascending: false })
+
+  // Process requests to attribute project_name and total_paid
+  const processedRequests = (requests || []).map(req => {
+    const machineLogs = logs?.filter(l => l.machine_id === req.machine_id) || []
+    const exactOrPriorLog = machineLogs.find(l => l.date <= req.date) || machineLogs[0]
+    const resolvedProject = (exactOrPriorLog?.projects as any)?.project_name || 'Sin proyecto asignado'
+
+    const sparePartsTotal = (req.spare_parts || []).reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0)
+    const totalPaid = (Number(req.cost) || 0) + sparePartsTotal
+
+    return {
+      ...req,
+      project_name: resolvedProject,
+      total_paid: totalPaid
+    }
+  })
 
   return (
     <main className="p-4 md:p-8">
@@ -48,7 +70,7 @@ export default async function MaintenancePage() {
         </header>
 
         <MaintenanceList 
-          initialRequests={requests || []} 
+          initialRequests={processedRequests} 
           machinery={machinery || []} 
           dict={dict}
           role={role}
