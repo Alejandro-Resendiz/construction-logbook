@@ -9,6 +9,7 @@ import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { toast } from 'sonner'
 import LogbookAnalytics from './LogbookAnalytics'
+import { DEFAULT_DIESEL_PRICE } from '@/lib/constants'
 
 interface AppDashboardClientProps {
   machinery: any[]
@@ -97,7 +98,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
   }
 
   const nonZeroPrices = logs.filter(l => Number(l.fuel_price) > 0).map(l => Number(l.fuel_price))
-  const calculatedAvgPrice = nonZeroPrices.length > 0 ? nonZeroPrices.reduce((a, b) => a + b, 0) / nonZeroPrices.length : 24.50
+  const calculatedAvgPrice = nonZeroPrices.length > 0 ? nonZeroPrices.reduce((a, b) => a + b, 0) / nonZeroPrices.length : DEFAULT_DIESEL_PRICE
   const fallbackPrice = Number(calculatedAvgPrice.toFixed(2))
 
   const exportPDF = async () => {

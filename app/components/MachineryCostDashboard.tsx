@@ -8,6 +8,7 @@ import { saveAs } from 'file-saver'
 import { format, startOfWeek } from 'date-fns'
 import ResponsiveBarChart from './charts/BarChart'
 import { svgToPngDataUrl, addPdfFooters } from '@/lib/pdf/chartExporter'
+import { DEFAULT_DIESEL_PRICE } from '@/lib/constants'
 
 interface MachineryCostDashboardProps {
   dict: any
@@ -57,7 +58,7 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
   // Inputs
   const [utilityPercent, setUtilityPercent] = useState<number>(20) // Default 20%
   const [operatorSalaryDefault, setOperatorSalaryDefault] = useState<number>(15000) // Default 15000
-  const [dieselPriceDefault, setDieselPriceDefault] = useState<number>(24.5) // Default placeholder
+  const [dieselPriceDefault, setDieselPriceDefault] = useState<number>(DEFAULT_DIESEL_PRICE) // Default placeholder
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -65,7 +66,7 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
     if (res.data) {
       // Calculate overall avg diesel price from records as a hint
       const allPrices = res.data.filter((i: any) => i.diesel_price > 0).map((i: any) => i.diesel_price)
-      const avgPrice = allPrices.length > 0 ? allPrices.reduce((a: any, b: any) => a + b, 0) / allPrices.length : 24.5
+      const avgPrice = allPrices.length > 0 ? allPrices.reduce((a: any, b: any) => a + b, 0) / allPrices.length : DEFAULT_DIESEL_PRICE
       setDieselPriceDefault(Number(avgPrice.toFixed(2)))
 
       // Initialize rows with default operator salary and individual avg price

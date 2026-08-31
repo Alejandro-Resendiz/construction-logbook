@@ -7,6 +7,7 @@ import ResponsiveBarChart from './charts/BarChart'
 import ResponsiveDonutChart from './charts/DonutChart'
 import { Fuel, Clock, Gauge, TrendingUp, DollarSign, Download, Loader2, Table as TableIcon } from 'lucide-react'
 import { svgToPngDataUrl, addPdfFooters } from '@/lib/pdf/chartExporter'
+import { DEFAULT_DIESEL_PRICE } from '@/lib/constants'
 
 interface LogbookAnalyticsProps {
   logs: any[]
@@ -48,7 +49,7 @@ export default function LogbookAnalytics({
     }
 
     const nonZeroPrices = logs.filter(l => Number(l.fuel_price) > 0).map(l => Number(l.fuel_price))
-    const calculatedAvgPrice = nonZeroPrices.length > 0 ? nonZeroPrices.reduce((a, b) => a + b, 0) / nonZeroPrices.length : 24.50
+    const calculatedAvgPrice = nonZeroPrices.length > 0 ? nonZeroPrices.reduce((a, b) => a + b, 0) / nonZeroPrices.length : DEFAULT_DIESEL_PRICE
     const fallbackPrice = Number(calculatedAvgPrice.toFixed(2))
 
     const processedLogs = logs.map(log => ({

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createMachineryLog } from '@/app/actions'
+import { DEFAULT_DIESEL_PRICE } from '@/lib/constants'
 
 interface MachineryLogFormProps {
   machinery: { machinery_id: number, machinery_full_name: string, machinery_serial_code?: string | null }[]
@@ -151,8 +152,8 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
           step="0.01" 
           name="fuel_price" 
           required
-          defaultValue="24.50"
-          placeholder={dict.fuel_price_placeholder || "24.50"}
+          defaultValue={DEFAULT_DIESEL_PRICE.toFixed(2)}
+          placeholder={dict.fuel_price_placeholder || DEFAULT_DIESEL_PRICE.toFixed(2)}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
         />
       </div>
