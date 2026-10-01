@@ -26,6 +26,11 @@ export default async function EditMaintenancePage({ params }: { params: { id: st
     notFound()
   }
 
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('project_id, project_name')
+    .order('project_name')
+
   return (
     <main className="p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -36,6 +41,7 @@ export default async function EditMaintenancePage({ params }: { params: { id: st
 
         <MaintenanceEditForm 
           request={request} 
+          projects={projects || []}
           dict={dict} 
         />
       </div>

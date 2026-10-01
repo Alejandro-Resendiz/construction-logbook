@@ -17,6 +17,11 @@ export default async function NewMaintenancePage() {
     .select('machinery_id, machinery_full_name, external_code')
     .order('machinery_full_name')
 
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('project_id, project_name')
+    .order('project_name')
+
   return (
     <main className="p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
@@ -28,6 +33,7 @@ export default async function NewMaintenancePage() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <MaintenanceRequestForm 
             machinery={machinery || []} 
+            projects={projects || []}
             dict={dict} 
           />
         </div>

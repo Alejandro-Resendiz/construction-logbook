@@ -9,12 +9,16 @@ import Link from 'next/link'
 
 interface MaintenanceEditFormProps {
   request: any
+  projects: { project_id: number, project_name: string }[]
   dict: any
 }
 
-export default function MaintenanceEditForm({ request, dict }: MaintenanceEditFormProps) {
+export default function MaintenanceEditForm({ request, projects, dict }: MaintenanceEditFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(
+    request.project_id ? String(request.project_id) : ''
+  )
   const [observations, setObservations] = useState(request.observations || '')
   const [attachments, setAttachments] = useState<string[]>(request.attachments || [])
   const [newFiles, setNewFiles] = useState<File[]>([])
@@ -48,9 +52,15 @@ export default function MaintenanceEditForm({ request, dict }: MaintenanceEditFo
       }
       setIsUploading(false)
 
-      // 2. Update details
+      // 2. Update details including project_id
       const finalAttachments = [...attachments, ...uploadedUrls]
-      const res = await updateMaintenanceDetails(request.maintenance_request_id, observations, finalAttachments)
+      const projectIdParam = selectedProjectId ? parseInt(selectedProjectId) : null
+      const res = await updateMaintenanceDetails(
+        request.maintenance_request_id, 
+        observations, 
+        finalAttachments,
+        projectIdParam
+      )
       
       if (res.success) {
         toast.success(dict.maintenance.success_update)
@@ -98,6 +108,28 @@ export default function MaintenanceEditForm({ request, dict }: MaintenanceEditFo
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Project Selection / Correction */}
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider text-[10px]">
+            {dict.new_log?.project || 'Proyecto'}
+          </label>
+          <select 
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 shadow-sm"
+          >
+            <option value="">{dict.new_log?.select_project || 'Selecciona proyecto...'}</option>
+            {projects.map(p => (
+              <option key={p.project_id} value={p.project_id}>
+                {p.project_name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-[11px] text-gray-500 italic">
+            Puedes cambiar o corregir la obra asignada a este mantenimiento.
+          </p>
+        </div>
+
         {/* Observations */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider text-[10px]">

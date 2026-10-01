@@ -1,8 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Trash2, Upload, X, CheckCircle2, Loader2, Paperclip } from 'lucide-react'
-import { createMaintenanceRequest, uploadMaintenanceAttachment } from '@/app/app/maintenance/actions'
+import { 
+  createMaintenanceRequest, 
+  uploadMaintenanceAttachment,
+  getSuggestedProjectForMachine 
+} from '@/app/app/maintenance/actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
@@ -15,15 +19,46 @@ interface SparePart {
 
 interface MaintenanceRequestFormProps {
   machinery: any[]
+  projects: { project_id: number, project_name: string }[]
   dict: any
 }
 
-export default function MaintenanceRequestForm({ machinery, dict }: MaintenanceRequestFormProps) {
+export default function MaintenanceRequestForm({ machinery, projects, dict }: MaintenanceRequestFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [selectedMachineId, setSelectedMachineId] = useState('')
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [isSuggestingProject, setIsSuggestingProject] = useState(false)
   const [spareParts, setSpareParts] = useState<SparePart[]>([])
   const [attachments, setAttachments] = useState<File[]>([])
   const [isUploading, setIsUploading] = useState(false)
+
+  useEffect(() => {
+    if (!selectedMachineId || !selectedDate) return
+
+    let cancelled = false
+    setIsSuggestingProject(true)
+
+    getSuggestedProjectForMachine(Number(selectedMachineId), selectedDate)
+      .then((suggestedId) => {
+        if (!cancelled && suggestedId) {
+          setSelectedProjectId(String(suggestedId))
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching suggested project:', err)
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsSuggestingProject(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedMachineId, selectedDate])
 
   const addSparePart = () => {
     setSpareParts([...spareParts, { 
@@ -105,6 +140,8 @@ export default function MaintenanceRequestForm({ machinery, dict }: MaintenanceR
             <select 
               name="machine_id" 
               required 
+              value={selectedMachineId}
+              onChange={(e) => setSelectedMachineId(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             >
               <option value="">{dict.common.select_placeholder}</option>
@@ -114,6 +151,35 @@ export default function MaintenanceRequestForm({ machinery, dict }: MaintenanceR
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-bold text-gray-700 uppercase tracking-wider text-[10px]">
+                {dict.new_log?.project || 'Proyecto'}
+              </label>
+              {isSuggestingProject && (
+                <span className="text-[10px] text-blue-600 flex items-center gap-1 font-medium">
+                  <Loader2 size={10} className="animate-spin" /> Buscando obra...
+                </span>
+              )}
+            </div>
+            <select 
+              name="project_id" 
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            >
+              <option value="">{dict.new_log?.select_project || 'Selecciona proyecto...'}</option>
+              {projects.map(p => (
+                <option key={p.project_id} value={p.project_id}>
+                  {p.project_name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-gray-500 italic">
+              Preseleccionado según la bitácora activa de la máquina; puedes cambiarlo si aplica a otra obra.
+            </p>
           </div>
 
           <div>
@@ -187,7 +253,8 @@ export default function MaintenanceRequestForm({ machinery, dict }: MaintenanceR
               type="date" 
               name="date" 
               required 
-              defaultValue={new Date().toISOString().split('T')[0]}
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
             />
           </div>

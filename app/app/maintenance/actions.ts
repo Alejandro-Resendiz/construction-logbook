@@ -19,6 +19,7 @@ const sparePartSchema = z.object({
 
 const maintenanceRequestSchema = z.object({
   machine_id: z.number(),
+  project_id: z.number().optional().nullable(),
   maintenance_type: z.enum(['preventive', 'corrective']),
   type: z.enum(['preventive', 'corrective']),
   date: z.string(),
@@ -39,8 +40,12 @@ export async function createMaintenanceRequest(formData: FormData, spareParts: a
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  const rawProjectId = formData.get('project_id') as string
+  const project_id = rawProjectId ? parseInt(rawProjectId) : null
+
   const rawData = {
     machine_id: parseInt(formData.get('machine_id') as string),
+    project_id,
     maintenance_type: formData.get('maintenance_type') as 'preventive' | 'corrective',
     type: formData.get('maintenance_type') as 'preventive' | 'corrective',
     date: formData.get('date') as string,
@@ -109,14 +114,24 @@ export async function updateMaintenanceStatus(requestId: number, status: 'pendin
   return { success: true }
 }
 
-export async function updateMaintenanceDetails(requestId: number, observations: string, attachments: string[]) {
+export async function updateMaintenanceDetails(
+  requestId: number, 
+  observations: string, 
+  attachments: string[], 
+  projectId?: number | null
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  const updatePayload: Record<string, any> = { observations, attachments }
+  if (projectId !== undefined) {
+    updatePayload.project_id = projectId
+  }
+
   const { error } = await supabase
     .from('maintenance_requests')
-    .update({ observations, attachments })
+    .update(updatePayload)
     .eq('maintenance_request_id', requestId)
 
   if (error) {
@@ -127,6 +142,22 @@ export async function updateMaintenanceDetails(requestId: number, observations: 
   revalidatePath('/app/maintenance')
   revalidatePath(`/app/maintenance/${requestId}`)
   return { success: true }
+}
+
+export async function getSuggestedProjectForMachine(machineId: number, date: string): Promise<number | null> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('machinery_logs')
+    .select('project_id')
+    .eq('machine_id', machineId)
+    .lte('date', date)
+    .not('project_id', 'is', null)
+    .order('date', { ascending: false })
+    .order('machinery_log_id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return data?.project_id || null
 }
 
 export async function uploadMaintenanceAttachment(file: File) {
