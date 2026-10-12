@@ -16,6 +16,7 @@ export default async function LogbookPage() {
   }
 
   const { data: machinery } = await supabase.from('machinery').select('*')
+  const { data: projects } = await supabase.from('projects').select('project_id, project_name').order('project_name', { ascending: true })
 
   return (
     <main className="p-4 md:p-8">
@@ -32,6 +33,7 @@ export default async function LogbookPage() {
       {/* This wrapper is a Client Component that uses dynamic(..., { ssr: false }) */}
       <AppDashboardWrapper 
         machinery={machinery || []} 
+        projects={projects || []}
         dict={dict.admin}
         common={dict.common}
       />

@@ -2,8 +2,14 @@
 
 import { createClient } from '@/lib/supabase/server'
 
-export async function getMachineryCostData(dateFrom?: string, dateTo?: string) {
+export async function getMachineryCostData(dateFrom?: string, dateTo?: string, projectId?: number) {
   const supabase = await createClient()
+
+  // 0. Fetch all projects for dropdowns
+  const { data: allProjects } = await supabase
+    .from('projects')
+    .select('project_id, project_name')
+    .order('project_name', { ascending: true })
 
   // 1. Fetch machinery joined with depreciation
   const { data: machines, error: machError } = await supabase
@@ -35,6 +41,7 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string) {
 
   if (dateFrom) logsQuery = logsQuery.gte('date', dateFrom)
   if (dateTo) logsQuery = logsQuery.lte('date', dateTo)
+  if (projectId) logsQuery = logsQuery.eq('project_id', projectId)
 
   const { data: logs, error: logsError } = await logsQuery
 
@@ -46,11 +53,12 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string) {
   // 3. Fetch all approved maintenance requests
   let maintQuery = supabase
     .from('maintenance_requests')
-    .select('machine_id, cost')
+    .select('machine_id, cost, project_id')
     .eq('status', 'approved')
 
   if (dateFrom) maintQuery = maintQuery.gte('date', dateFrom)
   if (dateTo) maintQuery = maintQuery.lte('date', dateTo)
+  if (projectId) maintQuery = maintQuery.eq('project_id', projectId)
 
   const { data: maintenance, error: maintError } = await maintQuery
 
@@ -74,8 +82,13 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string) {
     return hours + (mins / 60)
   }
 
+  // If projectId is specified, only include machines that had logs or maintenance on that project
+  const targetMachines = projectId 
+    ? machines.filter(m => logs?.some(l => l.machine_id === m.machinery_id) || maintenance?.some(mr => mr.machine_id === m.machinery_id))
+    : machines
+
   // Aggregate data by machine_id
-  const costData = machines.map(m => {
+  const costData = targetMachines.map(m => {
     const machineLogs = logs?.filter(l => l.machine_id === m.machinery_id) || []
     const machineMaint = maintenance?.filter(mr => mr.machine_id === m.machinery_id) || []
     
@@ -108,11 +121,6 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string) {
   })
 
   // Aggregate data by project for "costo por proyecto"
-  // Note: Since maintenance_requests doesn't have project_id in our schema (only machine_id),
-  // we might only be able to aggregate diesel and worked hours by project from logs.
-  // Unless maintenance_requests should also have project_id? 
-  // Checking maintenance_requests schema again...
-  
   const projectsMap: Record<number, { name: string, worked_hours: number, diesel_cost: number }> = {}
   
   logs?.forEach(l => {
@@ -134,5 +142,5 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string) {
     ...data
   }))
 
-  return { data: costData, projectData, logs }
+  return { data: costData, projectData, logs, projects: allProjects || [] }
 }
