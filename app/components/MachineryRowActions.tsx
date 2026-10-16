@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit2, Trash2, X, Save, ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react'
+import { Edit2, Trash2, X, Save, ChevronDown, ChevronRight, ShieldCheck, QrCode, Loader2 } from 'lucide-react'
 import { updateMachinery, deleteMachinery } from '@/app/app/machinery/actions'
 import { useMachineryStore } from '@/lib/store/machineryStore'
+import { exportMachineryQrPdf } from '@/lib/pdf/machineryQrExporter'
 import { toast } from 'sonner'
 
 interface MachineryRowActionsProps {
@@ -22,9 +23,23 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   const [observations, setObservations] = useState(machine.observations || '')
   const [isRented, setIsRented] = useState(!!machine.is_rented)
   const [loading, setLoading] = useState(false)
+  const [exportingQr, setExportingQr] = useState(false)
 
   // Use Zustand store actions
   const { removeMachine, updateMachine: updateLocalMachine } = useMachineryStore()
+
+  const handleExportQr = async () => {
+    try {
+      setExportingQr(true)
+      await exportMachineryQrPdf(machine)
+      toast.success('Ficha PDF con QR generada exitosamente')
+    } catch (err) {
+      console.error('Error al exportar QR:', err)
+      toast.error('Error al generar la ficha PDF del código QR')
+    } finally {
+      setExportingQr(false)
+    }
+  }
 
   const handleUpdate = async () => {
     setLoading(true)
@@ -170,6 +185,14 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
         </td>
         <td className="p-4 text-right">
           <div className="flex justify-end gap-2">
+            <button
+              onClick={handleExportQr}
+              disabled={exportingQr}
+              className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all disabled:opacity-50"
+              title="Exportar QR (PDF)"
+            >
+              {exportingQr ? <Loader2 size={18} className="animate-spin text-indigo-600" /> : <QrCode size={18} />}
+            </button>
             <button 
               onClick={() => setIsEditing(true)} 
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
