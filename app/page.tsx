@@ -8,7 +8,7 @@ export default async function NewLogPage() {
 
   const { data: machinery, error: machError } = await supabase
     .from('machinery')
-    .select('machinery_id, machinery_full_name, machinery_serial_code')
+    .select('machinery_id, machinery_full_name, machinery_serial_code, machine_type, expected_consumption_rate')
     .order('machinery_full_name', { ascending: true })
 
   const { data: projects, error: projError } = await supabase

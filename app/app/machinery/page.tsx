@@ -14,6 +14,10 @@ export default function MachineryPage() {
   const [errors, setErrors] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [filterRented, setFilterRented] = useState<'all' | 'owned' | 'rented'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'machine' | 'truck'>('all')
+  const [formType, setFormType] = useState<'machine' | 'truck'>('machine')
+  const [formHours, setFormHours] = useState('')
+  const [formLiters, setFormLiters] = useState('')
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'machinery_full_name', direction: 'asc' })
   
   // Use Zustand store
@@ -46,7 +50,8 @@ export default function MachineryPage() {
         m.machinery_full_name?.toLowerCase().includes(search) ||
         m.machinery_name?.toLowerCase().includes(search) ||
         m.machinery_model?.toLowerCase().includes(search) ||
-        m.machinery_serial_code?.toLowerCase().includes(search)
+        m.machinery_serial_code?.toLowerCase().includes(search) ||
+        m.machine_type?.toLowerCase().includes(search)
       )
 
       const matchesFilter = 
@@ -54,7 +59,11 @@ export default function MachineryPage() {
         filterRented === 'rented' ? m.is_rented === true :
         m.is_rented === false || !m.is_rented // owned
 
-      return matchesSearch && matchesFilter
+      const matchesType =
+        filterType === 'all' ? true :
+        (m.machine_type || 'machine') === filterType
+
+      return matchesSearch && matchesFilter && matchesType
     })
     .sort((a, b) => {
       if (!sortConfig.key || !sortConfig.direction) return 0
@@ -99,6 +108,9 @@ export default function MachineryPage() {
       addMachine(res.machine)
       toast.success(dict.common.notifications?.success_update || 'Registrado correctamente')
       setShowForm(false)
+      setFormType('machine')
+      setFormHours('')
+      setFormLiters('')
     } else {
       const errorMsg = dict.common.notifications?.[res.error as string] || dict.common.notifications?.generic_error || 'Error al registrar'
       toast.error(errorMsg)
@@ -147,31 +159,62 @@ export default function MachineryPage() {
 
         {/* Filters and Stats */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-            <button
-              onClick={() => setFilterRented('all')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                filterRented === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              {dict.common.all}
-            </button>
-            <button
-              onClick={() => setFilterRented('owned')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                filterRented === 'owned' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              {dict.admin.machinery.is_owned}
-            </button>
-            <button
-              onClick={() => setFilterRented('rented')}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                filterRented === 'rented' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              {dict.admin.machinery.is_rented}
-            </button>
+          <div className="flex flex-wrap gap-3">
+            {/* Ownership Filter */}
+            <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+              <button
+                onClick={() => setFilterRented('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filterRented === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                {dict.common.all}
+              </button>
+              <button
+                onClick={() => setFilterRented('owned')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filterRented === 'owned' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                {dict.admin.machinery.is_owned}
+              </button>
+              <button
+                onClick={() => setFilterRented('rented')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filterRented === 'rented' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                {dict.admin.machinery.is_rented}
+              </button>
+            </div>
+
+            {/* Type Filter */}
+            <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+              <button
+                onClick={() => setFilterType('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filterType === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Todos los tipos
+              </button>
+              <button
+                onClick={() => setFilterType('machine')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filterType === 'machine' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Máquinas
+              </button>
+              <button
+                onClick={() => setFilterType('truck')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  filterType === 'truck' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Camiones
+              </button>
+            </div>
           </div>
           
           <div className="text-sm text-gray-500">
@@ -230,6 +273,49 @@ export default function MachineryPage() {
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-500 uppercase">{dict.admin.machinery.serial_code}</label>
                   <input type="text" name="machinery_serial_code" className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Tipo</label>
+                  <select 
+                    name="machine_type" 
+                    value={formType}
+                    onChange={(e) => setFormType(e.target.value as any)}
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="machine">Máquina</option>
+                    <option value="truck">Camión</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Horas Estándar (h)</label>
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    name="expected_consumption_hours" 
+                    value={formHours}
+                    onChange={(e) => setFormHours(e.target.value)}
+                    placeholder="Ej: 8.0" 
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Litros Estándar (L)</label>
+                    {Number(formHours) > 0 && Number(formLiters) > 0 && (
+                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
+                        {(Number(formLiters) / Number(formHours)).toFixed(1)} L/h
+                      </span>
+                    )}
+                  </div>
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    name="expected_consumption_liters" 
+                    value={formLiters}
+                    onChange={(e) => setFormLiters(e.target.value)}
+                    placeholder="Ej: 160.0" 
+                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+                  />
                 </div>
                 <div className="space-y-1 flex flex-col justify-end pb-2">
                   <label className="text-xs font-bold text-gray-500 uppercase mb-2">{dict.admin.machinery.is_rented}</label>
@@ -293,16 +379,22 @@ export default function MachineryPage() {
                       {getSortIcon('machinery_serial_code')}
                     </div>
                   </th>
+                  <th onClick={() => handleSort('machine_type')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
+                    <div className="flex items-center gap-2">
+                      Tipo
+                      {getSortIcon('machine_type')}
+                    </div>
+                  </th>
                   <th className="p-4 font-semibold text-gray-600">{dict.admin.machinery.is_rented}</th>
                   <th className="p-4 text-right"></th>
                 </tr>
               </thead>
               <tbody className="text-gray-900">
                 {loading ? (
-                  <tr><td colSpan={8} className="p-8 text-center text-gray-400 italic">Cargando maquinaria...</td></tr>
+                  <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic">Cargando maquinaria...</td></tr>
                 ) : filteredMachinery.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-gray-400 italic">
+                    <td colSpan={9} className="p-8 text-center text-gray-400 italic">
                       {searchQuery ? 'No se encontraron resultados' : dict.admin.machinery.no_machinery}
                     </td>
                   </tr>

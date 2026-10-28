@@ -16,6 +16,12 @@ export async function createMachinery(formData: FormData) {
   const machinery_serial_code = formData.get('machinery_serial_code') as string
   const observations = formData.get('observations') as string
   const is_rented = formData.get('is_rented') === 'true'
+  const machine_type = (formData.get('machine_type') as string) || 'machine'
+
+  const rawHours = formData.get('expected_consumption_hours')
+  const expected_consumption_hours = rawHours ? parseFloat(rawHours as string) : null
+  const rawLiters = formData.get('expected_consumption_liters')
+  const expected_consumption_liters = rawLiters ? parseFloat(rawLiters as string) : null
 
   const { data, error } = await supabaseAdmin
     .from('machinery')
@@ -26,7 +32,10 @@ export async function createMachinery(formData: FormData) {
       machinery_model, 
       machinery_serial_code,
       observations,
-      is_rented
+      is_rented,
+      machine_type,
+      expected_consumption_hours,
+      expected_consumption_liters
     }])
     .select()
     .single()
@@ -54,6 +63,12 @@ export async function updateMachinery(machinery_id: number, formData: FormData) 
   const machinery_serial_code = formData.get('machinery_serial_code') as string
   const observations = formData.get('observations') as string
   const is_rented = formData.get('is_rented') === 'true'
+  const machine_type = (formData.get('machine_type') as string) || 'machine'
+
+  const rawHours = formData.get('expected_consumption_hours')
+  const expected_consumption_hours = rawHours ? parseFloat(rawHours as string) : null
+  const rawLiters = formData.get('expected_consumption_liters')
+  const expected_consumption_liters = rawLiters ? parseFloat(rawLiters as string) : null
 
   const { data, error } = await supabaseAdmin
     .from('machinery')
@@ -64,7 +79,10 @@ export async function updateMachinery(machinery_id: number, formData: FormData) 
       machinery_model, 
       machinery_serial_code,
       observations,
-      is_rented
+      is_rented,
+      machine_type,
+      expected_consumption_hours,
+      expected_consumption_liters
     })
     .eq('machinery_id', machinery_id)
     .select()

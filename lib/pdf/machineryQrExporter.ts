@@ -12,6 +12,10 @@ export interface MachineryItemForQR {
   machinery_serial_code?: string | null
   observations?: string | null
   is_rented?: boolean | null
+  machine_type?: string | null
+  expected_consumption_hours?: number | null
+  expected_consumption_liters?: number | null
+  expected_consumption_rate?: number | null
 }
 
 /**
@@ -249,4 +253,35 @@ export async function exportMachineryQrPdf(machine: MachineryItemForQR): Promise
   // 7. Save File
   const safeCode = (machine.external_code || `ID_${machine.machinery_id}`).replace(/[^a-zA-Z0-9_-]/g, '_')
   doc.save(`QR_Maquinaria_${safeCode}.pdf`)
+}
+
+/**
+ * Generates and downloads a standalone SVG vector file containing the machinery QR code.
+ */
+export function exportMachineryQrSvg(machine: MachineryItemForQR): void {
+  const payload = `machinery:${machine.machinery_id}`
+  let svgString = renderToStaticMarkup(
+    React.createElement(QRCodeSVG, {
+      value: payload,
+      size: 512,
+      level: 'H',
+      includeMargin: true,
+      marginSize: 2,
+    })
+  )
+
+  if (!svgString.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+    svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"')
+  }
+
+  const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  const safeCode = (machine.external_code || `ID_${machine.machinery_id}`).replace(/[^a-zA-Z0-9_-]/g, '_')
+  link.href = url
+  link.download = `QR_Maquinaria_${safeCode}.svg`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
