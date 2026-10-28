@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Edit2, Trash2, X, Save, ChevronDown, ChevronRight, ShieldCheck, QrCode, Loader2, FileText, FileCode, Truck, Wrench } from 'lucide-react'
+import { useState } from 'react'
+import { Edit2, Trash2, X, Save, ChevronDown, ChevronRight, Truck, Wrench } from 'lucide-react'
 import { updateMachinery, deleteMachinery } from '@/app/app/machinery/actions'
 import { useMachineryStore } from '@/lib/store/machineryStore'
-import { exportMachineryQrPdf, exportMachineryQrSvg } from '@/lib/pdf/machineryQrExporter'
 import { toast } from 'sonner'
 
 interface MachineryRowActionsProps {
@@ -26,54 +25,9 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   const [observations, setObservations] = useState(machine.observations || '')
   const [isRented, setIsRented] = useState(!!machine.is_rented)
   const [loading, setLoading] = useState(false)
-  const [showExportMenu, setShowExportMenu] = useState(false)
-  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'svg' | null>(null)
-  const exportMenuRef = useRef<HTMLDivElement>(null)
 
   // Use Zustand store actions
   const { removeMachine, updateMachine: updateLocalMachine } = useMachineryStore()
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-        setShowExportMenu(false)
-      }
-    }
-    if (showExportMenu) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showExportMenu])
-
-  const handleExportPdf = async () => {
-    setShowExportMenu(false)
-    try {
-      setExportingFormat('pdf')
-      await exportMachineryQrPdf(machine)
-      toast.success('Ficha PDF con QR generada exitosamente')
-    } catch (err) {
-      console.error('Error al exportar QR a PDF:', err)
-      toast.error('Error al generar la ficha PDF del código QR')
-    } finally {
-      setExportingFormat(null)
-    }
-  }
-
-  const handleExportSvg = () => {
-    setShowExportMenu(false)
-    try {
-      setExportingFormat('svg')
-      exportMachineryQrSvg(machine)
-      toast.success('Vector SVG del QR descargado exitosamente')
-    } catch (err) {
-      console.error('Error al exportar QR a SVG:', err)
-      toast.error('Error al generar el vector SVG')
-    } finally {
-      setExportingFormat(null)
-    }
-  }
 
   const handleUpdate = async () => {
     setLoading(true)
@@ -278,59 +232,6 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
         </td>
         <td className="p-4 text-right">
           <div className="flex justify-end items-center gap-2">
-            <div className="relative" ref={exportMenuRef}>
-              <button
-                type="button"
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                disabled={!!exportingFormat}
-                className={`p-2 rounded-lg transition-all flex items-center gap-0.5 ${
-                  showExportMenu
-                    ? 'bg-indigo-50 text-indigo-600'
-                    : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
-                } disabled:opacity-50`}
-                title="Exportar QR (PDF / SVG)"
-              >
-                {exportingFormat ? (
-                  <Loader2 size={18} className="animate-spin text-indigo-600" />
-                ) : (
-                  <>
-                    <QrCode size={18} />
-                    <ChevronDown size={12} className={`transition-transform duration-200 ${showExportMenu ? 'rotate-180 text-indigo-600' : 'text-gray-400'}`} />
-                  </>
-                )}
-              </button>
-
-              {showExportMenu && (
-                <div className="absolute right-0 top-full mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100 text-left">
-                  <div className="px-3 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-50">
-                    Exportar Código QR
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleExportPdf}
-                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition-colors"
-                  >
-                    <FileText size={15} className="text-rose-500 shrink-0" />
-                    <div>
-                      <span className="font-medium block leading-tight">Ficha PDF</span>
-                      <span className="text-[10px] text-gray-400">Hoja Carta imprimible</span>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportSvg}
-                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition-colors"
-                  >
-                    <FileCode size={15} className="text-amber-500 shrink-0" />
-                    <div>
-                      <span className="font-medium block leading-tight">Vector SVG</span>
-                      <span className="text-[10px] text-gray-400">Código QR puro</span>
-                    </div>
-                  </button>
-                </div>
-              )}
-            </div>
-
             <button 
               onClick={() => setIsEditing(true)} 
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"

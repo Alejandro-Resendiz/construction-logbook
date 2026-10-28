@@ -42,7 +42,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
       .select(`
         *,
         projects(project_name),
-        machinery(machinery_name, machinery_full_name, external_code, is_rented)
+        machinery(machinery_name, machinery_full_name, external_code, is_rented, machine_type, expected_consumption_rate)
       `)
       .gte('date', dateFrom)
       .lte('date', dateTo)
@@ -142,7 +142,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
         log.date,
         log.operator_name,
         log.projects?.project_name,
-        log.start_time,
+        log.start_time || '-',
         log.end_time || '-',
         log.fuel_liters,
         priceStr,
@@ -230,7 +230,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
         log.date, // Col A: FECHA
         log.operator_name, // Col B: OPERADOR
         log.projects?.project_name, // Col C: PROYECTO
-        log.start_time, // Col D: HORA INICIO
+        log.start_time || '-', // Col D: HORA INICIO
         log.end_time || '-', // Col E: HORA FIN
         log.fuel_liters, // Col F: CARGA DE COMBUSTIBLE
         log.fuel_price || '-', // Col G: PRECIO COMBUSTIBLE
@@ -400,7 +400,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
                     <td className="p-4 text-sm">{log.date}</td>
                     <td className="p-4 text-sm font-medium">{log.operator_name}</td>
                     <td className="p-4 text-sm">{log.projects?.project_name}</td>
-                    <td className="p-4 text-sm font-mono">{log.start_time}</td>
+                    <td className="p-4 text-sm font-mono">{log.start_time || '-'}</td>
                     <td className="p-4 text-sm font-mono">{log.end_time || '-'}</td>
                     <td className="p-4 text-sm">{log.fuel_liters}</td>
                     <td className="p-4 text-sm font-mono">

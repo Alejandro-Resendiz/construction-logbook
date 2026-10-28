@@ -7,21 +7,24 @@ export async function createMachineryLog(formData: FormData) {
   const project_id = parseInt(formData.get('project_id') as string)
   const date = (formData.get('date') as string) || new Date().toISOString().split('T')[0]
   const operator_name = formData.get('operator_name') as string
-  const start_time = (formData.get('start_time') as string) || new Date().toTimeString().slice(0, 5)
+  const rawStartTime = formData.get('start_time') as string | null
   const fuel_liters = parseFloat(formData.get('fuel_liters') as string) || 0
   const fuel_price = parseFloat(formData.get('fuel_price') as string) || null
 
-  // Guard: Ensure no concurrent active shift exists for this machine
-  const { data: existingActive } = await supabase
-    .from('machinery_logs')
-    .select('machinery_log_id')
-    .eq('machine_id', machine_id)
-    .eq('is_completed', false)
-    .maybeSingle()
+  // Fetch machine type
+  const { data: machine } = await supabase
+    .from('machinery')
+    .select('machine_type')
+    .eq('machinery_id', machine_id)
+    .single()
 
-  if (existingActive) {
-    return { error: 'Esta máquina ya tiene un turno activo o pausado en curso. Debe cerrarse antes de iniciar uno nuevo.' }
-  }
+  const isMachineType = machine?.machine_type !== 'truck'
+
+  // For heavy machines: start_time is omitted/null and shift is marked completed
+  // For trucks: start_time is required and shift starts open
+  const start_time = isMachineType ? null : (rawStartTime || new Date().toTimeString().slice(0, 5))
+  const is_completed = isMachineType ? true : false
+  const status = isMachineType ? 'completed' : 'started'
 
   const { data, error } = await supabase
     .from('machinery_logs')
@@ -34,7 +37,8 @@ export async function createMachineryLog(formData: FormData) {
         start_time,
         fuel_liters,
         fuel_price,
-        status: 'started',
+        is_completed,
+        status,
         pause_events: [],
         total_paused_minutes: 0,
       },
@@ -44,13 +48,34 @@ export async function createMachineryLog(formData: FormData) {
 
   if (error) {
     console.error('Error creating log:', error)
-    if (error.code === '23505') {
-      return { error: 'Esta máquina ya tiene un turno activo en curso. No es posible crear turnos simultáneos.' }
+    // Fallback if local migration hasn't dropped NOT NULL on start_time yet
+    if (error.code === '23502' && error.message.includes('start_time')) {
+      const retry = await supabase
+        .from('machinery_logs')
+        .insert([
+          {
+            machine_id,
+            project_id,
+            date,
+            operator_name,
+            start_time: '00:00:00',
+            fuel_liters,
+            fuel_price,
+            is_completed,
+            status,
+          },
+        ])
+        .select('hash_id, machinery_log_id')
+        .single()
+
+      if (!retry.error && retry.data) {
+        return { hash_id: retry.data.hash_id, log_id: retry.data.machinery_log_id, is_completed }
+      }
     }
     return { error: error.message }
   }
 
-  return { hash_id: data.hash_id, log_id: data.machinery_log_id }
+  return { hash_id: data.hash_id, log_id: data.machinery_log_id, is_completed }
 }
 
 /**
