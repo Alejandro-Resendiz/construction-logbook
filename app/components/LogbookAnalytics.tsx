@@ -52,14 +52,22 @@ export default function LogbookAnalytics({
     const calculatedAvgPrice = nonZeroPrices.length > 0 ? nonZeroPrices.reduce((a, b) => a + b, 0) / nonZeroPrices.length : DEFAULT_DIESEL_PRICE
     const fallbackPrice = Number(calculatedAvgPrice.toFixed(2))
 
-    const processedLogs = logs.map(log => ({
-      ...log,
-      hours: getHours(log.start_time, log.end_time),
-      cost: (log.fuel_liters || 0) * (log.fuel_price ? Number(log.fuel_price) : fallbackPrice),
-      machineLabel: log.machinery?.external_code || `M-${log.machine_id}`,
-      machineName: log.machinery?.machinery_name || `M-${log.machine_id}`,
-      projectLabel: log.projects?.project_name || `P-${log.project_id}`
-    }))
+    const processedLogs = logs.map(log => {
+      const isMachine = log.machinery?.machine_type !== 'truck'
+      const rate = Number(log.machinery?.expected_consumption_rate) || 0
+      const calculatedHours = isMachine && rate > 0 && log.fuel_liters
+        ? Number((log.fuel_liters / rate).toFixed(2))
+        : getHours(log.start_time, log.end_time)
+
+      return {
+        ...log,
+        hours: calculatedHours,
+        cost: (log.fuel_liters || 0) * (log.fuel_price ? Number(log.fuel_price) : fallbackPrice),
+        machineLabel: log.machinery?.external_code || `M-${log.machine_id}`,
+        machineName: log.machinery?.machinery_name || `M-${log.machine_id}`,
+        projectLabel: log.projects?.project_name || `P-${log.project_id}`
+      }
+    })
 
     // 1. Consumption per Machine
     const fuelPerMachine = Array.from(

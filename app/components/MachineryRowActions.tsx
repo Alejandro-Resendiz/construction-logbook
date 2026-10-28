@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Edit2, Trash2, X, Save, ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react'
+import { Edit2, Trash2, X, Save, ChevronDown, ChevronRight, Truck, Wrench } from 'lucide-react'
 import { updateMachinery, deleteMachinery } from '@/app/app/machinery/actions'
 import { useMachineryStore } from '@/lib/store/machineryStore'
 import { toast } from 'sonner'
@@ -19,6 +19,9 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   const [shortName, setShortName] = useState(machine.machinery_name || '')
   const [model, setModel] = useState(machine.machinery_model || '')
   const [serialCode, setSerialCode] = useState(machine.machinery_serial_code || '')
+  const [machineType, setMachineType] = useState(machine.machine_type || 'machine')
+  const [expectedHours, setExpectedHours] = useState(machine.expected_consumption_hours?.toString() || '')
+  const [expectedLiters, setExpectedLiters] = useState(machine.expected_consumption_liters?.toString() || '')
   const [observations, setObservations] = useState(machine.observations || '')
   const [isRented, setIsRented] = useState(!!machine.is_rented)
   const [loading, setLoading] = useState(false)
@@ -34,6 +37,9 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
     formData.append('machinery_name', shortName)
     formData.append('machinery_model', model)
     formData.append('machinery_serial_code', serialCode)
+    formData.append('machine_type', machineType)
+    formData.append('expected_consumption_hours', expectedHours)
+    formData.append('expected_consumption_liters', expectedLiters)
     formData.append('observations', observations)
     formData.append('is_rented', isRented ? 'true' : 'false')
     
@@ -66,7 +72,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   if (isEditing) {
     return (
       <tr className="bg-blue-50 border-b border-blue-100">
-        <td colSpan={8} className="p-6">
+        <td colSpan={9} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-blue-600 uppercase">{dict.admin.machinery.external_code}</label>
@@ -100,6 +106,40 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
               <label className="text-[10px] font-bold text-blue-600 uppercase">{dict.admin.machinery.serial_code}</label>
               <input 
                 type="text" value={serialCode} onChange={(e) => setSerialCode(e.target.value)} 
+                className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-blue-600 uppercase">Tipo</label>
+              <select
+                value={machineType}
+                onChange={(e) => setMachineType(e.target.value)}
+                className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="machine">Máquina</option>
+                <option value="truck">Camión</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-blue-600 uppercase">Horas Estándar (h)</label>
+              <input 
+                type="number" step="0.1" value={expectedHours} onChange={(e) => setExpectedHours(e.target.value)} 
+                placeholder="Ej: 8.0"
+                className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-bold text-blue-600 uppercase">Litros Estándar (L)</label>
+                {Number(expectedHours) > 0 && Number(expectedLiters) > 0 && (
+                  <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
+                    {(Number(expectedLiters) / Number(expectedHours)).toFixed(1)} L/h
+                  </span>
+                )}
+              </div>
+              <input 
+                type="number" step="0.1" value={expectedLiters} onChange={(e) => setExpectedLiters(e.target.value)} 
+                placeholder="Ej: 160.0"
                 className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
               />
             </div>
@@ -158,6 +198,28 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
         <td className="p-4 text-sm text-gray-600">{machine.machinery_model || '-'}</td>
         <td className="p-4 text-sm text-gray-600">{machine.machinery_serial_code || '-'}</td>
         <td className="p-4 text-sm">
+          <div className="flex flex-col gap-1 items-start">
+            {machine.machine_type === 'truck' ? (
+              <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1">
+                <Truck size={11} className="shrink-0" />
+                Camión
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1">
+                <Wrench size={11} className="shrink-0" />
+                Máquina
+              </span>
+            )}
+            {Number(machine.expected_consumption_rate) > 0 ? (
+              <span className="text-[11px] font-mono text-gray-500 font-medium">
+                {Number(machine.expected_consumption_rate).toFixed(1)} L/h
+              </span>
+            ) : (
+              <span className="text-[10px] text-gray-400 italic">Sin tasa</span>
+            )}
+          </div>
+        </td>
+        <td className="p-4 text-sm">
           {machine.is_rented ? (
             <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
               {dict.common.yes}
@@ -169,7 +231,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
           )}
         </td>
         <td className="p-4 text-right">
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end items-center gap-2">
             <button 
               onClick={() => setIsEditing(true)} 
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
@@ -189,7 +251,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
       </tr>
       {isExpanded && (
         <tr className="bg-gray-50/50 border-b border-gray-100 animate-in fade-in slide-in-from-top-1 duration-200">
-          <td colSpan={8} className="p-6">
+          <td colSpan={9} className="p-6">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
                 {dict.update_log.observations}

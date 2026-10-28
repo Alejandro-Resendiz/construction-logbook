@@ -19,6 +19,7 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
       machinery_full_name,
       external_code,
       is_rented,
+      expected_consumption_rate,
       machinery_depreciation (
         optimal_fuel_consumption,
         service_life,
@@ -68,8 +69,8 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
   }
 
   // Helper function to calculate hours between two TIME strings (HH:mm:ss)
-  const calculateHours = (start: string, end: string | null) => {
-    if (!end) return 0
+  const calculateHours = (start: string | null, end: string | null) => {
+    if (!start || !end) return 0
     const [sH, sM] = start.split(':').map(Number)
     const [eH, eM] = end.split(':').map(Number)
     
@@ -92,7 +93,12 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
     const machineLogs = logs?.filter(l => l.machine_id === m.machinery_id) || []
     const machineMaint = maintenance?.filter(mr => mr.machine_id === m.machinery_id) || []
     
-    const worked_hours = machineLogs.reduce((acc, l) => acc + calculateHours(l.start_time, l.end_time), 0)
+    const worked_hours = machineLogs.reduce((acc, l) => {
+      if (Number(m.expected_consumption_rate) > 0 && Number(l.fuel_liters) > 0) {
+        return acc + (Number(l.fuel_liters) / Number(m.expected_consumption_rate))
+      }
+      return acc + calculateHours(l.start_time, l.end_time)
+    }, 0)
     const diesel_consumption = machineLogs.reduce((acc, l) => acc + (Number(l.fuel_liters) || 0), 0)
     
     const fuelPrices = machineLogs.filter(l => l.fuel_price).map(l => Number(l.fuel_price))
@@ -132,7 +138,10 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
         diesel_cost: 0 
       }
     }
-    const hours = calculateHours(l.start_time, l.end_time)
+    const machine = machines.find(m => m.machinery_id === l.machine_id)
+    const hours = (Number(machine?.expected_consumption_rate) > 0 && Number(l.fuel_liters) > 0)
+      ? (Number(l.fuel_liters) / Number(machine?.expected_consumption_rate))
+      : calculateHours(l.start_time, l.end_time)
     projectsMap[l.project_id].worked_hours += hours
     projectsMap[l.project_id].diesel_cost += (Number(l.fuel_liters) || 0) * (Number(l.fuel_price) || 0)
   })

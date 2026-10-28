@@ -162,8 +162,11 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
     })
 
     // 2. Calculate per-project results using the machine hourly costs
-    const calculateHours = (start: string, end: string | null) => {
-      if (!end) return 0
+    const calculateHours = (start: string | null, end: string | null, fuelLiters?: number, rate?: number) => {
+      if (rate && rate > 0 && fuelLiters) {
+        return fuelLiters / rate
+      }
+      if (!start || !end) return 0
       const [sH, sM] = start.split(':').map(Number)
       const [eH, eM] = end.split(':').map(Number)
       let hours = eH - sH
@@ -178,7 +181,7 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       projectLogs.forEach(log => {
         const machine = updatedData.find(m => m.machinery_id === log.machine_id)
         if (machine?.results) {
-          const hours = calculateHours(log.start_time, log.end_time)
+          const hours = calculateHours(log.start_time, log.end_time, Number(log.fuel_liters), Number(machine.expected_consumption_rate))
           total_cost += machine.results.total_cost_hr * hours
         }
       })

@@ -79,7 +79,7 @@ export default function CorrectionLogForm({ dict, adminDict }: CorrectionLogForm
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{dict.end_time}</label>
-            <input type="time" name="end_time" defaultValue={log.end_time} required className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900" />
+            <input type="time" name="end_time" defaultValue={log.end_time || ''} className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{dict.observations}</label>
