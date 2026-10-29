@@ -57,9 +57,11 @@ export default function LogbookAnalytics({
     const processedLogs = logs.map(log => {
       const isMachine = log.machinery?.machine_type !== 'truck'
       const rate = Number(log.machinery?.expected_consumption_rate) || 0
-      const calculatedHours = isMachine && rate > 0 && log.fuel_liters
-        ? Number((log.fuel_liters / rate).toFixed(2))
-        : getHours(log.start_time, log.end_time)
+      const calculatedHours = log.effective_hours != null
+        ? Number(log.effective_hours)
+        : isMachine && rate > 0 && log.fuel_liters
+          ? Number((log.fuel_liters / rate).toFixed(2))
+          : getHours(log.start_time, log.end_time)
 
       return {
         ...log,

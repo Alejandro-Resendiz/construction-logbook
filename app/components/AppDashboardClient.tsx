@@ -238,9 +238,11 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
       const mId = log.machine_id
       const isMachine = log.machinery?.machine_type !== 'truck'
       const rate = Number(log.machinery?.expected_consumption_rate) || 0
-      const hours = isMachine && rate > 0 && log.fuel_liters
-        ? Number((log.fuel_liters / rate).toFixed(2))
-        : calculateHours(log.start_time, log.end_time)
+      const hours = log.effective_hours != null
+        ? Number(log.effective_hours)
+        : isMachine && rate > 0 && log.fuel_liters
+          ? Number((log.fuel_liters / rate).toFixed(2))
+          : calculateHours(log.start_time, log.end_time)
       const cost = (log.fuel_liters || 0) * (log.fuel_price ? Number(log.fuel_price) : fallbackPrice)
 
       const existing = map.get(mId)
