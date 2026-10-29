@@ -13,13 +13,16 @@ import { DEFAULT_DIESEL_PRICE } from '@/lib/constants'
 
 interface AppDashboardClientProps {
   machinery: any[]
+  projects?: any[]
   dict: any
   common: any
 }
 
-export default function AppDashboardClient({ machinery, dict, common }: AppDashboardClientProps) {
+export default function AppDashboardClient({ machinery, projects, dict, common }: AppDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'table' | 'analytics'>('table')
   const [selectedMachine, setSelectedMachine] = useState('')
+  const [selectedProject, setSelectedProject] = useState('')
+  const [projectList, setProjectList] = useState<any[]>(projects || [])
   const [machineType, setMachineType] = useState<'all' | 'owned' | 'rented'>('all')
   const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -27,6 +30,16 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
   const [loading, setLoading] = useState(false)
 
   const today = format(new Date(), 'yyyy-MM-dd')
+
+  useEffect(() => {
+    if (projects && projects.length > 0) {
+      setProjectList(projects)
+    } else {
+      supabase.from('projects').select('project_id, project_name').order('project_name', { ascending: true }).then(({ data }) => {
+        if (data) setProjectList(data)
+      })
+    }
+  }, [projects])
 
   const fetchLogs = async () => {
     // For table tab, machine is usually required to avoid huge lists, 
@@ -51,6 +64,10 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
       query = query.eq('machine_id', selectedMachine)
     }
 
+    if (selectedProject) {
+      query = query.eq('project_id', selectedProject)
+    }
+
     const { data, error } = await query.order('date', { ascending: true })
 
     if (error) {
@@ -71,7 +88,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
 
   useEffect(() => {
     fetchLogs()
-  }, [selectedMachine, dateFrom, dateTo, machineType, activeTab])
+  }, [selectedMachine, selectedProject, dateFrom, dateTo, machineType, activeTab])
 
   // Validation: Prevent future dates and enforce valid range
   const handleDateChange = (type: 'from' | 'to', value: string) => {
@@ -286,7 +303,7 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Machine Selector */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{dict.select_machine}</label>
@@ -297,6 +314,23 @@ export default function AppDashboardClient({ machinery, dict, common }: AppDashb
             >
               <option value="">{activeTab === 'analytics' ? 'Toda la maquinaria' : common.select_placeholder}</option>
               {machinery.map(m => <option key={m.machinery_id} value={m.machinery_id}>{m.machinery_full_name}</option>)}
+            </select>
+          </div>
+
+          {/* Project Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{dict.select_project || 'Filtrar por Proyecto'}</label>
+            <select 
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            >
+              <option value="">Todos</option>
+              {projectList.map(p => (
+                <option key={p.project_id} value={p.project_id}>
+                  {p.project_name}
+                </option>
+              ))}
             </select>
           </div>
 

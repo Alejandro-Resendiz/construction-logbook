@@ -10,6 +10,7 @@ const AppDashboardClient = dynamic(
 
 interface AppDashboardWrapperProps {
   machinery: any[]
+  projects?: any[]
   dict: any
   common: any
 }

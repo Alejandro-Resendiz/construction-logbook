@@ -22,6 +22,8 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
   const [data, setData] = useState<any[]>([])
   const [projectData, setProjectData] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
+  const [projectsList, setProjectsList] = useState<{ project_id: number, project_name: string }[]>([])
+  const [selectedProject, setSelectedProject] = useState<string>('')
   const [filterType, setFilterType] = useState<'all' | 'owned' | 'rented'>('all')
   const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
   const [dateTo, setDateTo] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -62,8 +64,11 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    const res = await getMachineryCostData(dateFrom, dateTo)
+    const res = await getMachineryCostData(dateFrom, dateTo, selectedProject ? Number(selectedProject) : undefined)
     if (res.data) {
+      if (res.projects) {
+        setProjectsList(res.projects)
+      }
       // Calculate overall avg diesel price from records as a hint
       const allPrices = res.data.filter((i: any) => i.diesel_price > 0).map((i: any) => i.diesel_price)
       const avgPrice = allPrices.length > 0 ? allPrices.reduce((a: any, b: any) => a + b, 0) / allPrices.length : DEFAULT_DIESEL_PRICE
@@ -83,7 +88,7 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       toast.error('Error al cargar datos')
     }
     setLoading(false)
-  }, [dateFrom, dateTo, operatorSalaryDefault])
+  }, [dateFrom, dateTo, operatorSalaryDefault, selectedProject])
 
   useEffect(() => {
     loadData()
@@ -252,9 +257,11 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       doc.setFont('helvetica', 'normal')
 
       const typeLabel = filterType === 'all' ? 'Todas' : filterType === 'owned' ? 'Propias' : 'Rentadas'
+      const selectedProjectObj = projectsList.find(p => p.project_id.toString() === selectedProject)
+      const projectLabel = selectedProjectObj ? selectedProjectObj.project_name : 'ALL'
 
       doc.setFillColor(248, 250, 252)
-      doc.roundedRect(14, 30, pageWidth - 28, 24, 2, 2, 'F')
+      doc.roundedRect(14, 30, pageWidth - 28, 30, 2, 2, 'F')
 
       doc.setFont('helvetica', 'bold')
       doc.text(`Periodo de Análisis:`, 18, 38)
@@ -267,17 +274,22 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       doc.text(typeLabel, 142, 38)
 
       doc.setFont('helvetica', 'bold')
-      doc.text(`Utilidad Objetiva:`, 18, 46)
+      doc.text(`Proyecto:`, 18, 46)
       doc.setFont('helvetica', 'normal')
-      doc.text(`${utilityPercent}%`, 48, 46)
+      doc.text(projectLabel, 48, 46, { maxWidth: 55 })
 
       doc.setFont('helvetica', 'bold')
-      doc.text(`Precio Diesel Base:`, 110, 46)
+      doc.text(`Utilidad Objetiva:`, 110, 46)
       doc.setFont('helvetica', 'normal')
-      doc.text(`$${dieselPriceDefault.toFixed(2)}`, 142, 46)
+      doc.text(`${utilityPercent}%`, 142, 46)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(`Precio Diesel Base:`, 18, 54)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`$${dieselPriceDefault.toFixed(2)}`, 48, 54)
 
       // Section 1: Breakdown Table
-      let currentY = 60
+      let currentY = 66
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(30, 41, 59)
@@ -444,7 +456,7 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       </header>
 
       {/* Global Filters & Range */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <div className="space-y-2">
           <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
             <Calendar size={14} />
@@ -496,10 +508,28 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
           </div>
         </div>
 
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-gray-500 uppercase">
+            {'Proyecto'}
+          </label>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+          >
+            <option value="">Todos</option>
+            {projectsList.map(p => (
+              <option key={p.project_id} value={p.project_id}>
+                {p.project_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex justify-end pb-1">
           <button 
             onClick={loadData}
-            className="px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2 border border-blue-100"
+            className="w-full md:w-auto px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2 border border-blue-100"
           >
             <RotateCcw size={16} />
             {dict.admin.machinery_cost.refresh_data}
