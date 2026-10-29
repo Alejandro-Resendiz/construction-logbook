@@ -21,6 +21,11 @@ export default async function MaintenancePage() {
     .select('machinery_id, machinery_full_name, external_code, machinery_name')
     .order('machinery_full_name')
 
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('project_id, project_name')
+    .order('project_name')
+
   // Fetch all maintenance requests with machinery and project info
   const { data: requests } = await supabase
     .from('maintenance_requests')
@@ -63,7 +68,8 @@ export default async function MaintenancePage() {
 
         <MaintenanceList 
           initialRequests={processedRequests} 
-          machinery={machinery || []} 
+          machinery={machinery || []}
+          projects={projects || []}
           dict={dict}
           role={role}
         />

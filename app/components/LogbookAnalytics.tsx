@@ -15,6 +15,7 @@ interface LogbookAnalyticsProps {
   dateFrom?: string
   dateTo?: string
   selectedMachineName?: string
+  selectedProjectName?: string
   machineType?: 'all' | 'owned' | 'rented'
 }
 
@@ -24,6 +25,7 @@ export default function LogbookAnalytics({
   dateFrom,
   dateTo,
   selectedMachineName = 'Toda la maquinaria',
+  selectedProjectName,
   machineType = 'all'
 }: LogbookAnalyticsProps) {
   const [viewMode, setViewMode] = useState<'liters' | 'mxn'>('liters')
@@ -206,30 +208,35 @@ export default function LogbookAnalytics({
       const rangeText = dateFrom && dateTo ? `${dateFrom} al ${dateTo}` : 'Periodo actual'
 
       doc.setFillColor(248, 250, 252)
-      doc.roundedRect(14, 30, pageWidth - 28, 20, 2, 2, 'F')
+      doc.roundedRect(14, 30, pageWidth - 28, 24, 2, 2, 'F')
 
       doc.setFont('helvetica', 'bold')
-      doc.text(`Periodo:`, 18, 38)
+      doc.text(`Periodo:`, 18, 37)
       doc.setFont('helvetica', 'normal')
-      doc.text(rangeText, 35, 38)
+      doc.text(rangeText, 35, 37)
 
       doc.setFont('helvetica', 'bold')
-      doc.text(`Maquinaria:`, 95, 38)
+      doc.text(`Maquinaria:`, 95, 37)
       doc.setFont('helvetica', 'normal')
-      doc.text(selectedMachineName, 118, 38, { maxWidth: 75 })
+      doc.text(selectedMachineName, 118, 37, { maxWidth: 75 })
 
       doc.setFont('helvetica', 'bold')
-      doc.text(`Tipo:`, 18, 45)
+      doc.text(`Proyecto:`, 18, 44)
       doc.setFont('helvetica', 'normal')
-      doc.text(typeLabel, 35, 45)
+      doc.text(selectedProjectName || 'Todos los proyectos', 35, 44, { maxWidth: 55 })
 
       doc.setFont('helvetica', 'bold')
-      doc.text(`Modo de vista:`, 95, 45)
+      doc.text(`Tipo:`, 95, 44)
       doc.setFont('helvetica', 'normal')
-      doc.text(viewMode === 'liters' ? 'Litros (Volumen)' : 'MXN (Costo)', 118, 45)
+      doc.text(typeLabel, 118, 44)
+
+      doc.setFont('helvetica', 'bold')
+      doc.text(`Modo de vista:`, 18, 51)
+      doc.setFont('helvetica', 'normal')
+      doc.text(viewMode === 'liters' ? 'Litros (Volumen)' : 'MXN (Costo)', 45, 51)
 
       // Summary KPIs Box
-      let currentY = 56
+      let currentY = 59
       doc.setFontSize(11)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(30, 41, 59)
@@ -580,6 +587,22 @@ export default function LogbookAnalytics({
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="bg-gray-100 font-bold border-t-2 border-gray-300 text-gray-900">
+                <td className="p-4" colSpan={3}>
+                  TOTALES ({analyticsData.detailedBreakdown.length} registros agrupados)
+                </td>
+                <td className="p-4 font-mono text-right text-blue-900">
+                  {analyticsData.totals.liters.toFixed(2)} L
+                </td>
+                <td className="p-4 font-mono text-right text-green-800">
+                  ${analyticsData.totals.cost.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                </td>
+                <td className="p-4 font-mono text-right text-orange-900">
+                  {analyticsData.totals.hours.toFixed(1)} h
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </section>
