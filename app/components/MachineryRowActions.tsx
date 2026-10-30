@@ -72,7 +72,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   if (isEditing) {
     return (
       <tr className="bg-blue-50 border-b border-blue-100">
-        <td colSpan={9} className="p-6">
+        <td colSpan={6} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-blue-600 uppercase">{dict.admin.machinery.external_code}</label>
@@ -194,9 +194,6 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
         </td>
         <td className="p-4 text-sm font-mono text-gray-500">{machine.external_code || '-'}</td>
         <td className="p-4 font-medium text-gray-900">{machine.machinery_full_name}</td>
-        <td className="p-4 text-sm text-gray-600">{machine.machinery_name}</td>
-        <td className="p-4 text-sm text-gray-600">{machine.machinery_model || '-'}</td>
-        <td className="p-4 text-sm text-gray-600">{machine.machinery_serial_code || '-'}</td>
         <td className="p-4 text-sm">
           <div className="flex flex-col gap-1 items-start">
             {machine.machine_type === 'truck' ? (
@@ -251,16 +248,45 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
       </tr>
       {isExpanded && (
         <tr className="bg-gray-50/50 border-b border-gray-100 animate-in fade-in slide-in-from-top-1 duration-200">
-          <td colSpan={9} className="p-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
-                {dict.update_log.observations}
-              </label>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {machine.observations || (
-                  <span className="text-gray-400 italic">Sin observaciones registradas.</span>
-                )}
-              </p>
+          <td colSpan={6} className="p-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-gray-100">
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                    {dict.admin.machinery.short_name}
+                  </span>
+                  <span className="text-sm font-medium text-gray-800">
+                    {machine.machinery_name || '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                    {dict.admin.machinery.model}
+                  </span>
+                  <span className="text-sm font-medium text-gray-800 font-mono">
+                    {machine.machinery_model || '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                    {dict.admin.machinery.serial_code}
+                  </span>
+                  <span className="text-sm font-medium text-gray-800 font-mono">
+                    {machine.machinery_serial_code || '-'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                  {dict.update_log.observations}
+                </span>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                  {machine.observations || (
+                    <span className="text-gray-400 italic">Sin observaciones registradas.</span>
+                  )}
+                </p>
+              </div>
             </div>
           </td>
         </tr>
