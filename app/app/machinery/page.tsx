@@ -361,24 +361,6 @@ export default function MachineryPage() {
                       {getSortIcon('machinery_full_name')}
                     </div>
                   </th>
-                  <th onClick={() => handleSort('machinery_name')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
-                    <div className="flex items-center gap-2">
-                      {dict.admin.machinery.short_name}
-                      {getSortIcon('machinery_name')}
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('machinery_model')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
-                    <div className="flex items-center gap-2">
-                      {dict.admin.machinery.model}
-                      {getSortIcon('machinery_model')}
-                    </div>
-                  </th>
-                  <th onClick={() => handleSort('machinery_serial_code')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
-                    <div className="flex items-center gap-2">
-                      {dict.admin.machinery.serial_code}
-                      {getSortIcon('machinery_serial_code')}
-                    </div>
-                  </th>
                   <th onClick={() => handleSort('machine_type')} className="p-4 font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 transition-colors select-none">
                     <div className="flex items-center gap-2">
                       Tipo
@@ -391,10 +373,10 @@ export default function MachineryPage() {
               </thead>
               <tbody className="text-gray-900">
                 {loading ? (
-                  <tr><td colSpan={9} className="p-8 text-center text-gray-400 italic">Cargando maquinaria...</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 italic">Cargando maquinaria...</td></tr>
                 ) : filteredMachinery.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="p-8 text-center text-gray-400 italic">
+                    <td colSpan={6} className="p-8 text-center text-gray-400 italic">
                       {searchQuery ? 'No se encontraron resultados' : dict.admin.machinery.no_machinery}
                     </td>
                   </tr>
