@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { Truck, Calculator, RotateCcw, Download, PieChart, Table as TableIcon, Calendar, Loader2, FileText } from 'lucide-react'
+import { Truck, Calculator, RotateCcw, Download, PieChart, Table as TableIcon, Calendar, Loader2, FileText, ChevronDown, Search } from 'lucide-react'
 import { getMachineryCostData } from '@/app/app/machinery_cost/actions'
 import { toast } from 'sonner'
 import { saveAs } from 'file-saver'
@@ -59,8 +59,25 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
 
   // Inputs
   const [utilityPercent, setUtilityPercent] = useState<number>(20) // Default 20%
-  const [operatorSalaryDefault, setOperatorSalaryDefault] = useState<number>(15000) // Default 15000
   const [dieselPriceDefault, setDieselPriceDefault] = useState<number>(DEFAULT_DIESEL_PRICE) // Default placeholder
+
+  // Machine multiselect state
+  const [selectedMachines, setSelectedMachines] = useState<string[]>([])
+  const [isMachineDropdownOpen, setIsMachineDropdownOpen] = useState(false)
+  const [machineSearch, setMachineSearch] = useState('')
+  const machineDropdownRef = useRef<HTMLDivElement>(null)
+  const [onlyWithActivity, setOnlyWithActivity] = useState(true)
+
+  // Close machine dropdown on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (machineDropdownRef.current && !machineDropdownRef.current.contains(e.target as Node)) {
+        setIsMachineDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -74,13 +91,13 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       const avgPrice = allPrices.length > 0 ? allPrices.reduce((a: any, b: any) => a + b, 0) / allPrices.length : DEFAULT_DIESEL_PRICE
       setDieselPriceDefault(Number(avgPrice.toFixed(2)))
 
-      // Initialize rows with default operator salary and individual avg price
+      // Initialize rows with individual avg price
       const initialRows = res.data.map((item: any) => ({
         ...item,
-        operator_salary: operatorSalaryDefault,
         diesel_price: item.diesel_price > 0 ? item.diesel_price : avgPrice
       }))
       setData(initialRows)
+      setSelectedMachines(initialRows.map((item: any) => item.machinery_id.toString()))
       setProjectData(res.projectData || [])
       setLogs(res.logs || [])
       setIsCalculated(false) // Reset calculation state when data reloads
@@ -88,29 +105,16 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       toast.error('Error al cargar datos')
     }
     setLoading(false)
-  }, [dateFrom, dateTo, operatorSalaryDefault, selectedProject])
+  }, [dateFrom, dateTo, selectedProject])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
-  const handleOperatorSalaryChange = (id: number, value: number) => {
-    setData(prev => prev.map(item => 
-      item.machinery_id === id ? { ...item, operator_salary: value } : item
-    ))
-  }
-
   const handleDieselPriceChange = (id: number, value: number) => {
     setData(prev => prev.map(item => 
       item.machinery_id === id ? { ...item, diesel_price: value } : item
     ))
-  }
-
-  const handleOperatorSalaryDefaultChange = (value: number) => {
-    setOperatorSalaryDefault(value)
-    if (!isCalculated) {
-      setData(prev => prev.map(item => ({ ...item, operator_salary: value })))
-    }
   }
 
   const handleDieselPriceDefaultChange = (value: number) => {
@@ -120,22 +124,93 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
     }
   }
 
+  const availableMachinery = data
+
+  const visibleMachines = useMemo(() => {
+    if (!machineSearch.trim()) return availableMachinery
+    const q = machineSearch.toLowerCase()
+    return availableMachinery.filter(m =>
+      m.machinery_full_name?.toLowerCase().includes(q) ||
+      m.external_code?.toLowerCase().includes(q)
+    )
+  }, [availableMachinery, machineSearch])
+
+  const isAllSelected = availableMachinery.length > 0 && selectedMachines.length === availableMachinery.length
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedMachines([])
+    } else {
+      setSelectedMachines(availableMachinery.map(m => m.machinery_id.toString()))
+    }
+  }
+
+  const toggleMachine = (id: string) => {
+    setSelectedMachines(prev =>
+      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+    )
+  }
+
+  const machineSelectorLabel = useMemo(() => {
+    if (selectedMachines.length === 0) return 'Ninguna máquina seleccionada'
+    if (isAllSelected) return `Todas las máquinas (${availableMachinery.length})`
+    if (selectedMachines.length === 1) {
+      const match = availableMachinery.find(m => m.machinery_id.toString() === selectedMachines[0])
+      return match ? match.machinery_full_name : '1 máquina seleccionada'
+    }
+    return `${selectedMachines.length} máquinas seleccionadas`
+  }, [availableMachinery, selectedMachines, isAllSelected])
+
   const filteredData = useMemo(() => {
-    return data.filter(item => {
-      if (filterType === 'all') return true
-      if (filterType === 'rented') return item.is_rented
-      return !item.is_rented
-    })
-  }, [data, filterType])
+    return data
+      .filter(item => {
+        if (filterType === 'all') return true
+        if (filterType === 'rented') return item.is_rented
+        return !item.is_rented
+      })
+      .filter(item => selectedMachines.includes(item.machinery_id.toString()))
+      .filter(item => {
+        if (!onlyWithActivity) return true
+        return (item.worked_hours > 0) || (item.diesel_consumption > 0) || (item.maintenance_cost > 0)
+      })
+  }, [data, filterType, selectedMachines, onlyWithActivity])
+
+  const totals = useMemo(() => {
+    const count = filteredData.length
+    if (count === 0) return null
+
+    const totalWorkedHours = filteredData.reduce((acc, i) => acc + (i.worked_hours || 0), 0)
+    const totalDiesel = filteredData.reduce((acc, i) => acc + (i.diesel_consumption || 0), 0)
+    const totalMaintenance = filteredData.reduce((acc, i) => acc + (i.maintenance_cost || 0), 0)
+    const avgDieselPrice = filteredData.reduce((acc, i) => acc + (i.diesel_price || 0), 0) / count
+
+    const totalFuelCostHr = filteredData.reduce((acc, i) => acc + (i.results?.fuel_cost_hr || 0), 0)
+    const totalMaintCostHr = filteredData.reduce((acc, i) => acc + (i.results?.maintenance_cost_hr || 0), 0)
+    const totalDeprCostHr = filteredData.reduce((acc, i) => acc + (i.results?.depreciation_cost_hr || 0), 0)
+    const totalCostHr = filteredData.reduce((acc, i) => acc + (i.results?.total_cost_hr || 0), 0)
+    const totalRentRateHr = filteredData.reduce((acc, i) => acc + (i.results?.rent_rate_hr || 0), 0)
+
+    return {
+      count,
+      totalWorkedHours,
+      totalDiesel,
+      totalMaintenance,
+      avgDieselPrice,
+      avgFuelCostHr: totalFuelCostHr / count,
+      avgMaintCostHr: totalMaintCostHr / count,
+      avgDeprCostHr: totalDeprCostHr / count,
+      avgTotalCostHr: totalCostHr / count,
+      avgRentRateHr: totalRentRateHr / count,
+    }
+  }, [filteredData])
 
   const calculateResults = () => {
-    // 1. Calculate per-machine results
+    // 1. Calculate per-machine results (fuel + maintenance + depreciation, no operator salary)
     const updatedData = data.map(item => {
       const worked_hours = item.worked_hours || 1 // Avoid division by zero
       
       const rescue_value = item.purchase_value * item.rescue_value_percent
       const fuel_cost_hr = (item.diesel_consumption * item.diesel_price) / worked_hours
-      const operator_cost_hr = item.operator_salary / worked_hours
       const maintenance_cost_hr = item.maintenance_cost / worked_hours
       
       // Depreciation Cost/hr: use manual override if exists, otherwise calculate: (purchase_value - rescue_value) / lifespan_years / 2112
@@ -144,7 +219,7 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
         ? Number(item.estimated_depreciation_rate)
         : (item.purchase_value - rescue_value) / service_life / 2112
       
-      const total_cost_hr = fuel_cost_hr + operator_cost_hr + maintenance_cost_hr + depreciation_cost_hr
+      const total_cost_hr = fuel_cost_hr + maintenance_cost_hr + depreciation_cost_hr
       const rent_rate_hr = total_cost_hr * (1 + (utilityPercent / 100))
 
       return {
@@ -152,7 +227,6 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
         results: {
           rescue_value,
           fuel_cost_hr,
-          operator_cost_hr,
           maintenance_cost_hr,
           depreciation_cost_hr,
           total_cost_hr,
@@ -162,8 +236,19 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
     })
 
     // 2. Calculate per-project results using the machine hourly costs
-    const calculateHours = (start: string | null, end: string | null, fuelLiters?: number, rate?: number) => {
-      if (rate && rate > 0 && fuelLiters) {
+    const calculateHours = (
+      start: string | null,
+      end: string | null,
+      effectiveHours?: number | null,
+      fuelLiters?: number,
+      rate?: number,
+      machineType?: string
+    ) => {
+      if (effectiveHours != null) {
+        return Number(effectiveHours)
+      }
+      const isMachine = machineType !== 'truck'
+      if (isMachine && rate && rate > 0 && fuelLiters) {
         return fuelLiters / rate
       }
       if (!start || !end) return 0
@@ -181,7 +266,14 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       projectLogs.forEach(log => {
         const machine = updatedData.find(m => m.machinery_id === log.machine_id)
         if (machine?.results) {
-          const hours = calculateHours(log.start_time, log.end_time, Number(log.fuel_liters), Number(machine.expected_consumption_rate))
+          const hours = calculateHours(
+            log.start_time,
+            log.end_time,
+            log.effective_hours,
+            Number(log.fuel_liters),
+            Number(machine.expected_consumption_rate),
+            machine.machine_type
+          )
           total_cost += machine.results.total_cost_hr * hours
         }
       })
@@ -205,7 +297,7 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
 
   const exportCSV = () => {
     const csvContent = [
-      ["Codigo", "Maquinaria", "Horas Trab", "Diesel (L)", "Precio Diesel", "Costo Mant", "Valor Rescate", "Costo Comb/h", "Costo Op/h", "Costo Mant/h", "Costo Depr/h", "Costo Total/h", "Tarifa Renta/h"].join(","),
+      ["Codigo", "Maquinaria", "Horas Trab", "Diesel (L)", "Precio Diesel", "Costo Mant", "Valor Rescate", "Costo Comb/h", "Costo Mant/h", "Costo Depr/h", "Costo Total/h", "Tarifa Renta/h"].join(","),
       ...filteredData.map(item => [
         item.external_code,
         item.machinery_full_name,
@@ -215,7 +307,6 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
         item.maintenance_cost.toFixed(2),
         item.results?.rescue_value.toFixed(2) || "0.00",
         item.results?.fuel_cost_hr.toFixed(2) || "0.00",
-        item.results?.operator_cost_hr.toFixed(2) || "0.00",
         item.results?.maintenance_cost_hr.toFixed(2) || "0.00",
         item.results?.depreciation_cost_hr.toFixed(2) || "0.00",
         item.results?.total_cost_hr.toFixed(2) || "0.00",
@@ -300,7 +391,6 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
         'Maquinaria',
         'Horas',
         'Comb/h',
-        'Op/h',
         'Mant/h',
         'Depr/h',
         'Costo T./h',
@@ -312,7 +402,6 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
         item.machinery_full_name,
         `${item.worked_hours.toFixed(1)}h`,
         `$${item.results?.fuel_cost_hr.toFixed(2) || '0.00'}`,
-        `$${item.results?.operator_cost_hr.toFixed(2) || '0.00'}`,
         `$${item.results?.maintenance_cost_hr.toFixed(2) || '0.00'}`,
         `$${item.results?.depreciation_cost_hr.toFixed(2) || '0.00'}`,
         `$${item.results?.total_cost_hr.toFixed(2) || '0.00'}`,
@@ -330,12 +419,11 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
           0: { cellWidth: 16, fontStyle: 'bold' },
           1: { overflow: 'linebreak' },
           2: { cellWidth: 16 },
-          3: { cellWidth: 18 },
-          4: { cellWidth: 18 },
-          5: { cellWidth: 18 },
-          6: { cellWidth: 18 },
-          7: { cellWidth: 20, fontStyle: 'bold' },
-          8: { cellWidth: 22, fontStyle: 'bold', textColor: [16, 185, 129] }
+          3: { cellWidth: 20 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 22, fontStyle: 'bold' },
+          7: { cellWidth: 24, fontStyle: 'bold', textColor: [16, 185, 129] }
         }
       })
 
@@ -456,7 +544,8 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
       </header>
 
       {/* Global Filters & Range */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        {/* Col 1: Date Range */}
         <div className="space-y-2">
           <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-2">
             <Calendar size={14} />
@@ -476,10 +565,114 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
           </div>
         </div>
 
+        {/* Col 2: Project Selector */}
         <div className="space-y-2">
           <label className="text-xs font-bold text-gray-500 uppercase">
-            {dict.admin.analytics.machinery_type}
+            {'Proyecto'}
           </label>
+          <select
+            value={selectedProject}
+            onChange={(e) => setSelectedProject(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+          >
+            <option value="">Todos</option>
+            {projectsList.map(p => (
+              <option key={p.project_id} value={p.project_id}>
+                {p.project_name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Col 3: Machine Multiselect Dropdown */}
+        <div className="space-y-2 relative" ref={machineDropdownRef}>
+          <label className="text-xs font-bold text-gray-500 uppercase">
+            {dict.select_machine || 'Maquinaria'}
+          </label>
+          <button
+            type="button"
+            onClick={() => setIsMachineDropdownOpen(prev => !prev)}
+            className="w-full flex items-center justify-between p-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <span className="truncate pr-2">{machineSelectorLabel}</span>
+            <ChevronDown size={16} className={`text-gray-400 transition-transform ${isMachineDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Dropdown Popover */}
+          {isMachineDropdownOpen && (
+            <div className="absolute z-50 mt-1 w-full sm:w-80 bg-white rounded-lg border border-gray-200 shadow-xl p-3 space-y-2 right-0 sm:left-0 sm:right-auto">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                  />
+                  <span>{isAllSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}</span>
+                </label>
+                <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                  {selectedMachines.length} de {availableMachinery.length}
+                </span>
+              </div>
+
+              {/* Search Box */}
+              <div className="relative">
+                <Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar máquina..."
+                  value={machineSearch}
+                  onChange={(e) => setMachineSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Machine Options List */}
+              <div className="max-h-52 overflow-y-auto space-y-1">
+                {visibleMachines.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-3">No hay coincidencias</p>
+                ) : (
+                  visibleMachines.map((m: any) => {
+                    const idStr = m.machinery_id.toString()
+                    const checked = selectedMachines.includes(idStr)
+                    return (
+                      <label
+                        key={m.machinery_id}
+                        className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer hover:bg-gray-50 transition-colors ${checked ? 'bg-blue-50/50 text-blue-900 font-medium' : 'text-gray-700'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleMachine(idStr)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-3.5 w-3.5"
+                        />
+                        <span className="font-mono text-gray-500 text-[11px]">{m.external_code}</span>
+                        <span className="truncate flex-1">{m.machinery_full_name}</span>
+                      </label>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Col 4: Ownership Type & Refresh */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-gray-500 uppercase">
+              {dict.admin.analytics.machinery_type}
+            </label>
+            <button 
+              onClick={loadData}
+              className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              title={dict.admin.machinery_cost.refresh_data}
+            >
+              <RotateCcw size={12} />
+              {dict.admin.machinery_cost.refresh_data}
+            </button>
+          </div>
           <div className="flex bg-gray-50 p-1 rounded-lg border border-gray-200">
             <button
               onClick={() => setFilterType('all')}
@@ -507,38 +700,10 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
             </button>
           </div>
         </div>
-
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-gray-500 uppercase">
-            {'Proyecto'}
-          </label>
-          <select
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-          >
-            <option value="">Todos</option>
-            {projectsList.map(p => (
-              <option key={p.project_id} value={p.project_id}>
-                {p.project_name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex justify-end pb-1">
-          <button 
-            onClick={loadData}
-            className="w-full md:w-auto px-4 py-2 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center gap-2 border border-blue-100"
-          >
-            <RotateCcw size={16} />
-            {dict.admin.machinery_cost.refresh_data}
-          </button>
-        </div>
       </div>
 
       {/* Global Inputs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
             {dict.admin.machinery_cost.utility_percent}
@@ -571,48 +736,44 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
             />
           </div>
         </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <label className="block text-xs font-bold text-gray-500 uppercase mb-2">
-            {dict.admin.machinery_cost.operator_salary} Default
-          </label>
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-gray-400">$</span>
-            <input 
-              type="number" 
-              value={operatorSalaryDefault}
-              onChange={(e) => handleOperatorSalaryDefaultChange(Number(e.target.value))}
-              disabled={isCalculated}
-              className="flex-1 p-2 border border-gray-300 rounded-lg text-lg font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-400"
-            />
-          </div>
-        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab('rows')}
-          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'rows' 
-              ? 'border-blue-600 text-blue-600' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <TableIcon size={18} />
-          {dict.admin.analytics.table_tab}
-        </button>
-        <button
-          onClick={() => setActiveTab('kpis')}
-          className={`px-6 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'kpis' 
-              ? 'border-blue-600 text-blue-600' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <PieChart size={18} />
-          {dict.admin.machinery_cost.visualizations}
-        </button>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-200">
+        <div className="flex">
+          <button
+            onClick={() => setActiveTab('rows')}
+            className={`px-6 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+              activeTab === 'rows' 
+                ? 'border-blue-600 text-blue-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <TableIcon size={18} />
+            {dict.admin.analytics.table_tab}
+          </button>
+          <button
+            onClick={() => setActiveTab('kpis')}
+            className={`px-6 py-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2 ${
+              activeTab === 'kpis' 
+                ? 'border-blue-600 text-blue-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <PieChart size={18} />
+            {dict.admin.machinery_cost.visualizations}
+          </button>
+        </div>
+
+        <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-gray-600 hover:text-gray-900 pb-2 sm:pb-0">
+          <input
+            type="checkbox"
+            checked={onlyWithActivity}
+            onChange={(e) => setOnlyWithActivity(e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+          />
+          <span>Solo con actividad</span>
+        </label>
       </div>
 
       {/* Tab Content: Table View */}
@@ -629,12 +790,10 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
                 <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.machinery_cost.diesel_price}</th>
                 <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.machinery_cost.maintenance_cost}</th>
                 <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.depreciation.estimated_depreciation_rate}</th>
-                <th className="p-4 font-bold uppercase text-[10px]">{dict.admin.machinery_cost.operator_salary}</th>
                 
                 {isCalculated && (
                   <>
                     <th className="p-4 font-bold uppercase text-[10px] bg-blue-50 text-blue-700">{dict.admin.machinery_cost.fuel_cost_hr}</th>
-                    <th className="p-4 font-bold uppercase text-[10px] bg-blue-50 text-blue-700">{dict.admin.machinery_cost.operator_cost_hr}</th>
                     <th className="p-4 font-bold uppercase text-[10px] bg-blue-50 text-blue-700">{dict.admin.machinery_cost.maintenance_cost_hr}</th>
                     <th className="p-4 font-bold uppercase text-[10px] bg-blue-50 text-blue-700">{dict.admin.machinery_cost.depreciation_cost_hr}</th>
                     <th className="p-4 font-bold uppercase text-[10px] bg-orange-50 text-orange-700">{dict.admin.machinery_cost.total_cost_hr}</th>
@@ -644,50 +803,73 @@ export default function MachineryCostDashboard({ dict }: MachineryCostDashboardP
               </tr>
             </thead>
             <tbody className="text-gray-900">
-              {filteredData.map(item => (
-                <tr key={item.machinery_id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                  <td className="p-4 font-bold">{item.external_code}</td>
-                  <td className="p-4">{item.machinery_full_name}</td>
-                  <td className="p-4 font-mono">{item.worked_hours.toFixed(1)}h</td>
-                  <td className="p-4 font-mono">{item.diesel_consumption.toFixed(1)}L</td>
-                  <td className="p-4 font-mono text-gray-500">{item.optimal_fuel_consumption}L/h</td>
-                  <td className="p-4">
-                    <input 
-                      type="number" 
-                      step="0.01"
-                      value={item.diesel_price}
-                      onChange={(e) => handleDieselPriceChange(item.machinery_id, Number(e.target.value))}
-                      disabled={isCalculated}
-                      className="w-20 p-1 border border-gray-300 rounded outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent font-mono"
-                    />
+              {filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={isCalculated ? 13 : 8} className="p-12 text-center text-gray-400 italic">
+                    No se encontraron registros de maquinaria para los filtros seleccionados.
                   </td>
-                  <td className="p-4 font-mono text-red-600">${item.maintenance_cost.toLocaleString()}</td>
-                  <td className="p-4 font-mono text-gray-500">
-                    {item.estimated_depreciation_rate > 0 ? `$${item.estimated_depreciation_rate}/h` : '—'}
+                </tr>
+              ) : (
+                filteredData.map(item => (
+                  <tr key={item.machinery_id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                    <td className="p-4 font-bold">{item.external_code}</td>
+                    <td className="p-4">{item.machinery_full_name}</td>
+                    <td className="p-4 font-mono">{item.worked_hours.toFixed(1)}h</td>
+                    <td className="p-4 font-mono">{item.diesel_consumption.toFixed(1)}L</td>
+                    <td className="p-4 font-mono text-gray-500">{item.optimal_fuel_consumption}L/h</td>
+                    <td className="p-4">
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        value={item.diesel_price}
+                        onChange={(e) => handleDieselPriceChange(item.machinery_id, Number(e.target.value))}
+                        disabled={isCalculated}
+                        className="w-20 p-1 border border-gray-300 rounded outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent font-mono"
+                      />
+                    </td>
+                    <td className="p-4 font-mono text-red-600">${item.maintenance_cost.toLocaleString()}</td>
+                    <td className="p-4 font-mono text-gray-500">
+                      {item.estimated_depreciation_rate > 0 ? `$${item.estimated_depreciation_rate}/h` : '—'}
+                    </td>
+
+                    {isCalculated && (
+                      <>
+                        <td className="p-4 font-mono bg-blue-50/30 font-bold">${item.results?.fuel_cost_hr.toFixed(2)}</td>
+                        <td className="p-4 font-mono bg-blue-50/30 font-bold">${item.results?.maintenance_cost_hr.toFixed(2)}</td>
+                        <td className="p-4 font-mono bg-blue-50/30 font-bold">${item.results?.depreciation_cost_hr.toFixed(2)}</td>
+                        <td className="p-4 font-mono bg-orange-50/30 font-bold text-orange-700">${item.results?.total_cost_hr.toFixed(2)}</td>
+                        <td className="p-4 font-mono bg-green-50/30 font-bold text-green-700 text-lg">${item.results?.rent_rate_hr.toFixed(2)}</td>
+                      </>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {totals && (
+              <tfoot>
+                <tr className="bg-gray-100 font-bold border-t-2 border-gray-300 text-gray-900">
+                  <td className="p-4 text-xs uppercase tracking-wider" colSpan={2}>
+                    TOTALES ({totals.count} {totals.count === 1 ? 'máquina' : 'máquinas'})
                   </td>
-                  <td className="p-4">
-                    <input 
-                      type="number" 
-                      value={item.operator_salary}
-                      onChange={(e) => handleOperatorSalaryChange(item.machinery_id, Number(e.target.value))}
-                      disabled={isCalculated}
-                      className="w-24 p-1 border border-gray-300 rounded outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:border-transparent font-mono"
-                    />
-                  </td>
+                  <td className="p-4 font-mono text-sm">{totals.totalWorkedHours.toFixed(1)}h</td>
+                  <td className="p-4 font-mono text-sm">{totals.totalDiesel.toFixed(1)}L</td>
+                  <td className="p-4 font-mono text-sm text-gray-400">—</td>
+                  <td className="p-4 font-mono text-sm">${totals.avgDieselPrice.toFixed(2)}</td>
+                  <td className="p-4 font-mono text-sm text-red-600">${totals.totalMaintenance.toLocaleString()}</td>
+                  <td className="p-4 font-mono text-sm text-gray-400">—</td>
 
                   {isCalculated && (
                     <>
-                      <td className="p-4 font-mono bg-blue-50/30 font-bold">${item.results?.fuel_cost_hr.toFixed(2)}</td>
-                      <td className="p-4 font-mono bg-blue-50/30 font-bold">${item.results?.operator_cost_hr.toFixed(2)}</td>
-                      <td className="p-4 font-mono bg-blue-50/30 font-bold">${item.results?.maintenance_cost_hr.toFixed(2)}</td>
-                      <td className="p-4 font-mono bg-blue-50/30 font-bold">${item.results?.depreciation_cost_hr.toFixed(2)}</td>
-                      <td className="p-4 font-mono bg-orange-50/30 font-bold text-orange-700">${item.results?.total_cost_hr.toFixed(2)}</td>
-                      <td className="p-4 font-mono bg-green-50/30 font-bold text-green-700 text-lg">${item.results?.rent_rate_hr.toFixed(2)}</td>
+                      <td className="p-4 font-mono text-sm bg-blue-100/50">${totals.avgFuelCostHr.toFixed(2)}</td>
+                      <td className="p-4 font-mono text-sm bg-blue-100/50">${totals.avgMaintCostHr.toFixed(2)}</td>
+                      <td className="p-4 font-mono text-sm bg-blue-100/50">${totals.avgDeprCostHr.toFixed(2)}</td>
+                      <td className="p-4 font-mono text-sm bg-orange-100/50 text-orange-800">${totals.avgTotalCostHr.toFixed(2)}</td>
+                      <td className="p-4 font-mono text-sm bg-green-100/50 text-green-800">${totals.avgRentRateHr.toFixed(2)}</td>
                     </>
                   )}
                 </tr>
-              ))}
-            </tbody>
+              </tfoot>
+            )}
           </table>
         </div>
       </div>

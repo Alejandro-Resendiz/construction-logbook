@@ -11,14 +11,19 @@ export async function createMachineryLog(formData: FormData) {
   const fuel_liters = parseFloat(formData.get('fuel_liters') as string) || 0
   const fuel_price = parseFloat(formData.get('fuel_price') as string) || null
 
-  // Fetch machine type
+  // Fetch machine type and benchmark rate
   const { data: machine } = await supabase
     .from('machinery')
-    .select('machine_type')
+    .select('machine_type, expected_consumption_rate')
     .eq('machinery_id', machine_id)
     .single()
 
   const isMachineType = machine?.machine_type !== 'truck'
+  const rate = Number(machine?.expected_consumption_rate) || 0
+  const effective_hours =
+    isMachineType && rate > 0 && fuel_liters
+      ? Number((fuel_liters / rate).toFixed(2))
+      : null
 
   // For heavy machines: start_time is omitted/null and shift is marked completed
   // For trucks: start_time is required and shift starts open
@@ -37,6 +42,7 @@ export async function createMachineryLog(formData: FormData) {
         start_time,
         fuel_liters,
         fuel_price,
+        effective_hours,
         is_completed,
         status,
         pause_events: [],
@@ -61,6 +67,7 @@ export async function createMachineryLog(formData: FormData) {
             start_time: '00:00:00',
             fuel_liters,
             fuel_price,
+            effective_hours,
             is_completed,
             status,
           },

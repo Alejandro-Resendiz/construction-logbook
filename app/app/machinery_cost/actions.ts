@@ -19,6 +19,7 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
       machinery_full_name,
       external_code,
       is_rented,
+      machine_type,
       expected_consumption_rate,
       machinery_depreciation (
         optimal_fuel_consumption,
@@ -37,7 +38,7 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
   // 2. Fetch all completed logs for aggregation
   let logsQuery = supabase
     .from('machinery_logs')
-    .select('machine_id, project_id, start_time, end_time, fuel_liters, fuel_price, projects(project_name)')
+    .select('machine_id, project_id, start_time, end_time, fuel_liters, fuel_price, effective_hours, projects(project_name)')
     .eq('is_completed', true)
 
   if (dateFrom) logsQuery = logsQuery.gte('date', dateFrom)
@@ -94,7 +95,11 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
     const machineMaint = maintenance?.filter(mr => mr.machine_id === m.machinery_id) || []
     
     const worked_hours = machineLogs.reduce((acc, l) => {
-      if (Number(m.expected_consumption_rate) > 0 && Number(l.fuel_liters) > 0) {
+      if (l.effective_hours != null) {
+        return acc + Number(l.effective_hours)
+      }
+      const isMachine = m.machine_type !== 'truck'
+      if (isMachine && Number(m.expected_consumption_rate) > 0 && Number(l.fuel_liters) > 0) {
         return acc + (Number(l.fuel_liters) / Number(m.expected_consumption_rate))
       }
       return acc + calculateHours(l.start_time, l.end_time)
@@ -113,6 +118,7 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
       machinery_full_name: m.machinery_full_name,
       external_code: m.external_code,
       is_rented: m.is_rented,
+      machine_type: m.machine_type || 'machine',
       worked_hours,
       diesel_consumption,
       diesel_price,
@@ -139,9 +145,12 @@ export async function getMachineryCostData(dateFrom?: string, dateTo?: string, p
       }
     }
     const machine = machines.find(m => m.machinery_id === l.machine_id)
-    const hours = (Number(machine?.expected_consumption_rate) > 0 && Number(l.fuel_liters) > 0)
-      ? (Number(l.fuel_liters) / Number(machine?.expected_consumption_rate))
-      : calculateHours(l.start_time, l.end_time)
+    const isMachine = machine?.machine_type !== 'truck'
+    const hours = l.effective_hours != null
+      ? Number(l.effective_hours)
+      : (isMachine && Number(machine?.expected_consumption_rate) > 0 && Number(l.fuel_liters) > 0)
+        ? (Number(l.fuel_liters) / Number(machine?.expected_consumption_rate))
+        : calculateHours(l.start_time, l.end_time)
     projectsMap[l.project_id].worked_hours += hours
     projectsMap[l.project_id].diesel_cost += (Number(l.fuel_liters) || 0) * (Number(l.fuel_price) || 0)
   })
