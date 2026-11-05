@@ -20,8 +20,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   const [model, setModel] = useState(machine.machinery_model || '')
   const [serialCode, setSerialCode] = useState(machine.machinery_serial_code || '')
   const [machineType, setMachineType] = useState(machine.machine_type || 'machine')
-  const [expectedHours, setExpectedHours] = useState(machine.expected_consumption_hours?.toString() || '')
-  const [expectedLiters, setExpectedLiters] = useState(machine.expected_consumption_liters?.toString() || '')
+  const [expectedRate, setExpectedRate] = useState(machine.expected_consumption_rate?.toString() || '')
   const [observations, setObservations] = useState(machine.observations || '')
   const [isRented, setIsRented] = useState(!!machine.is_rented)
   const [loading, setLoading] = useState(false)
@@ -38,8 +37,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
     formData.append('machinery_model', model)
     formData.append('machinery_serial_code', serialCode)
     formData.append('machine_type', machineType)
-    formData.append('expected_consumption_hours', expectedHours)
-    formData.append('expected_consumption_liters', expectedLiters)
+    formData.append('expected_consumption_rate', expectedRate)
     formData.append('observations', observations)
     formData.append('is_rented', isRented ? 'true' : 'false')
     
@@ -120,29 +118,16 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
                 <option value="truck">Camión</option>
               </select>
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-blue-600 uppercase">Horas Estándar (h)</label>
-              <input 
-                type="number" step="0.1" value={expectedHours} onChange={(e) => setExpectedHours(e.target.value)} 
-                placeholder="Ej: 8.0"
-                className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
-              />
-            </div>
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] font-bold text-blue-600 uppercase">Litros Estándar (L)</label>
-                {Number(expectedHours) > 0 && Number(expectedLiters) > 0 && (
-                  <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
-                    {(Number(expectedLiters) / Number(expectedHours)).toFixed(1)} L/h
-                  </span>
-                )}
+            {machineType !== 'truck' && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-blue-600 uppercase">Consumo por Hora (L/h)</label>
+                <input 
+                  type="number" step="0.01" value={expectedRate} onChange={(e) => setExpectedRate(e.target.value)} 
+                  placeholder="Ej: 18.5"
+                  className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+                />
               </div>
-              <input 
-                type="number" step="0.1" value={expectedLiters} onChange={(e) => setExpectedLiters(e.target.value)} 
-                placeholder="Ej: 160.0"
-                className="w-full p-2 border rounded bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
-              />
-            </div>
+            )}
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-blue-600 uppercase mb-2 block">{dict.admin.machinery.is_rented}</label>
               <label className="inline-flex items-center cursor-pointer">
@@ -207,12 +192,14 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
                 Máquina
               </span>
             )}
-            {Number(machine.expected_consumption_rate) > 0 ? (
-              <span className="text-[11px] font-mono text-gray-500 font-medium">
-                {Number(machine.expected_consumption_rate).toFixed(1)} L/h
-              </span>
-            ) : (
-              <span className="text-[10px] text-gray-400 italic">Sin tasa</span>
+            {machine.machine_type !== 'truck' && (
+              Number(machine.expected_consumption_rate) > 0 ? (
+                <span className="text-[11px] font-mono text-gray-500 font-medium">
+                  {Number(machine.expected_consumption_rate).toFixed(1)} L/h
+                </span>
+              ) : (
+                <span className="text-[10px] text-gray-400 italic">L/h sin especificar</span>
+              )
             )}
           </div>
         </td>
@@ -250,7 +237,7 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
         <tr className="bg-gray-50/50 border-b border-gray-100 animate-in fade-in slide-in-from-top-1 duration-200">
           <td colSpan={6} className="p-6">
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pb-4 border-b border-gray-100">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 ${machine.machine_type !== 'truck' ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 pb-4 border-b border-gray-100`}>
                 <div>
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
                     {dict.admin.machinery.short_name}
@@ -275,6 +262,20 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
                     {machine.machinery_serial_code || '-'}
                   </span>
                 </div>
+                {machine.machine_type !== 'truck' && (
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+                      Consumo por Hora
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 font-mono">
+                      {Number(machine.expected_consumption_rate) > 0 ? (
+                        `${Number(machine.expected_consumption_rate).toFixed(2)} L/h`
+                      ) : (
+                        <span className="text-gray-400 italic font-sans text-xs">Sin especificar</span>
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">

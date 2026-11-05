@@ -16,8 +16,7 @@ export default function MachineryPage() {
   const [filterRented, setFilterRented] = useState<'all' | 'owned' | 'rented'>('all')
   const [filterType, setFilterType] = useState<'all' | 'machine' | 'truck'>('all')
   const [formType, setFormType] = useState<'machine' | 'truck'>('machine')
-  const [formHours, setFormHours] = useState('')
-  const [formLiters, setFormLiters] = useState('')
+  const [formRate, setFormRate] = useState('')
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: 'machinery_full_name', direction: 'asc' })
   
   // Use Zustand store
@@ -109,8 +108,7 @@ export default function MachineryPage() {
       toast.success(dict.common.notifications?.success_update || 'Registrado correctamente')
       setShowForm(false)
       setFormType('machine')
-      setFormHours('')
-      setFormLiters('')
+      setFormRate('')
     } else {
       const errorMsg = dict.common.notifications?.[res.error as string] || dict.common.notifications?.generic_error || 'Error al registrar'
       toast.error(errorMsg)
@@ -286,37 +284,20 @@ export default function MachineryPage() {
                     <option value="truck">Camión</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Horas Estándar (h)</label>
-                  <input 
-                    type="number" 
-                    step="0.1" 
-                    name="expected_consumption_hours" 
-                    value={formHours}
-                    onChange={(e) => setFormHours(e.target.value)}
-                    placeholder="Ej: 8.0" 
-                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
-                  />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Litros Estándar (L)</label>
-                    {Number(formHours) > 0 && Number(formLiters) > 0 && (
-                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">
-                        {(Number(formLiters) / Number(formHours)).toFixed(1)} L/h
-                      </span>
-                    )}
+                {formType !== 'truck' && (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Consumo por Hora (L/h)</label>
+                    <input 
+                      type="number" 
+                      step="0.01" 
+                      name="expected_consumption_rate" 
+                      value={formRate}
+                      onChange={(e) => setFormRate(e.target.value)}
+                      placeholder="Ej: 18.5" 
+                      className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
+                    />
                   </div>
-                  <input 
-                    type="number" 
-                    step="0.1" 
-                    name="expected_consumption_liters" 
-                    value={formLiters}
-                    onChange={(e) => setFormLiters(e.target.value)}
-                    placeholder="Ej: 160.0" 
-                    className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none" 
-                  />
-                </div>
+                )}
                 <div className="space-y-1 flex flex-col justify-end pb-2">
                   <label className="text-xs font-bold text-gray-500 uppercase mb-2">{dict.admin.machinery.is_rented}</label>
                   <label className="inline-flex items-center cursor-pointer">
