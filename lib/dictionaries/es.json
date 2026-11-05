@@ -45,6 +45,7 @@
     "project": "Proyecto",
     "start_time": "Hora de Inicio",
     "fuel_liters": "Carga de Combustible (Litros)",
+    "fuel_price": "Precio Combustible (Por Litro)",
     "already_completed": "Ya está actualizado, contacta a tu administrador.",
     "end_time": "Hora de Salida",
     "observations": "Observaciones",

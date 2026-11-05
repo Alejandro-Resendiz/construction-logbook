@@ -10,6 +10,8 @@ const supabaseAdmin = createClient(
 )
 
 export async function adminUpdateLog(hash_id: string, formData: FormData) {
+  const rawDate = formData.get('date') as string
+  const date = rawDate && rawDate.trim() !== '' ? rawDate : null
   const rawEndTime = formData.get('end_time') as string
   const end_time = rawEndTime && rawEndTime.trim() !== '' ? rawEndTime : null
   const observations = formData.get('observations') as string
@@ -22,6 +24,10 @@ export async function adminUpdateLog(hash_id: string, formData: FormData) {
     fuel_price,
     is_corrected: true,
     is_completed: true // Ensure it stays completed
+  }
+
+  if (date) {
+    updatePayload.date = date
   }
 
   if (rawFuelLiters && !isNaN(parseFloat(rawFuelLiters))) {

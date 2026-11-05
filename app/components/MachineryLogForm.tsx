@@ -73,16 +73,27 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
             </div>
           </div>
         ) : (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-left text-xs text-blue-900 space-y-2">
-            <p className="font-semibold text-sm">Resumen de Operación Registrada:</p>
-            <p><strong>Equipo:</strong> {selectedMachine?.machinery_full_name}</p>
-            <p><strong>Combustible cargado:</strong> {fuelLiters} Litros</p>
-            {estimatedHours && (
-              <p><strong>Tiempo estimado de operación:</strong> ~{estimatedHours} horas (Tasa: {expectedRate.toFixed(1)} L/h)</p>
-            )}
-            <p className="text-emerald-700 font-medium pt-1">
-              ✓ Turno completado y computado automáticamente para reportes de costos.
-            </p>
+          <div className="space-y-3">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-left text-xs text-blue-900 space-y-2">
+              <p className="font-semibold text-sm">Resumen de Operación Registrada:</p>
+              <p><strong>Equipo:</strong> {selectedMachine?.machinery_full_name}</p>
+              <p><strong>Combustible cargado:</strong> {fuelLiters} Litros</p>
+              {estimatedHours && (
+                <p><strong>Tiempo estimado de operación:</strong> ~{estimatedHours} horas (Tasa: {expectedRate.toFixed(1)} L/h)</p>
+              )}
+              <p className="text-emerald-700 font-medium pt-1">
+                ✓ Turno completado y computado automáticamente para reportes de costos.
+              </p>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center space-y-1">
+              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">
+                Código de Registro (para corrección):
+              </span>
+              <div className="text-xl font-mono font-bold text-gray-800 tracking-wider">
+                {result.hash_id}
+              </div>
+            </div>
           </div>
         )}
 
@@ -149,7 +160,7 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
               </span>
               <div>
                 <span className="font-semibold text-blue-900">Maquinaria Pesada:</span>
-                <span className="text-gray-600 ml-1">Horas calculadas por carga de combustible y tasa estándar.</span>
+                <span className="text-gray-600 ml-1">Horas calculadas por carga de combustible y tasa de consumo por hora.</span>
               </div>
             </>
           )}
@@ -260,7 +271,7 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
           {expectedRate > 0 ? (
             <div className="space-y-1">
               <p className="text-gray-600">
-                Tasa estándar de consumo: <strong>{expectedRate.toFixed(1)} L/h</strong>
+                Consumo por hora: <strong>{expectedRate.toFixed(1)} L/h</strong>
               </p>
               {Number(fuelLiters) > 0 ? (
                 <div className="pt-1 flex items-baseline gap-2">
@@ -273,7 +284,7 @@ export default function MachineryLogForm({ machinery, projects, dict }: Machiner
             </div>
           ) : (
             <p className="text-amber-700 italic">
-              Esta máquina aún no tiene configurada su tasa estándar ($L/h$) en el catálogo de maquinaria.
+              Esta máquina aún no tiene configurada la tasa de consumo por hora ($L/h$) en el catálogo de maquinaria.
             </p>
           )}
         </div>
