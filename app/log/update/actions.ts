@@ -14,6 +14,7 @@ export async function getLogByHashId(hash_id: string) {
       observations,
       start_time,
       fuel_liters,
+      fuel_price,
       machinery(machinery_name),
       projects(project_name)
     `)

@@ -19,6 +19,8 @@ export default function MaintenanceEditForm({ request, projects, dict }: Mainten
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
     request.project_id ? String(request.project_id) : ''
   )
+  const [date, setDate] = useState<string>(request.date || '')
+  const [cost, setCost] = useState<string>(request.cost !== undefined && request.cost !== null ? String(request.cost) : '0')
   const [observations, setObservations] = useState(request.observations || '')
   const [attachments, setAttachments] = useState<string[]>(request.attachments || [])
   const [newFiles, setNewFiles] = useState<File[]>([])
@@ -52,14 +54,17 @@ export default function MaintenanceEditForm({ request, projects, dict }: Mainten
       }
       setIsUploading(false)
 
-      // 2. Update details including project_id
+      // 2. Update details including project_id, date, and cost
       const finalAttachments = [...attachments, ...uploadedUrls]
       const projectIdParam = selectedProjectId ? parseInt(selectedProjectId) : null
+      const costParam = cost !== '' && !isNaN(parseFloat(cost)) ? parseFloat(cost) : 0
       const res = await updateMaintenanceDetails(
         request.maintenance_request_id, 
         observations, 
         finalAttachments,
-        projectIdParam
+        projectIdParam,
+        date || null,
+        costParam
       )
       
       if (res.success) {
@@ -81,7 +86,7 @@ export default function MaintenanceEditForm({ request, projects, dict }: Mainten
   return (
     <div className="space-y-8">
       {/* Read-Only Info Summary */}
-      <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{dict.maintenance.machinery}</label>
           <p className="font-bold text-gray-900">[{request.machinery?.external_code}] {request.machinery?.machinery_full_name}</p>
@@ -97,17 +102,41 @@ export default function MaintenanceEditForm({ request, projects, dict }: Mainten
             )}
           </div>
         </div>
-        <div className="space-y-1">
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{dict.maintenance.date}</label>
-          <p className="font-medium text-gray-700">{request.date}</p>
-        </div>
-        <div className="md:col-span-3 space-y-1">
+        <div className="md:col-span-2 space-y-1">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{dict.maintenance.description}</label>
           <p className="text-sm text-gray-700">{request.description}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Editable Date and Cost */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider text-[10px]">
+              {dict.maintenance.date || 'Fecha'}
+            </label>
+            <input 
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+              className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider text-[10px]">
+              {dict.maintenance.cost ? `${dict.maintenance.cost} (MXN)` : 'Costo de Mano de Obra / Servicio (MXN)'}
+            </label>
+            <input 
+              type="number"
+              step="0.01"
+              value={cost}
+              onChange={(e) => setCost(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 shadow-sm font-mono"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
         {/* Project Selection / Correction */}
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wider text-[10px]">

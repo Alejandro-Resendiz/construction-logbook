@@ -118,7 +118,9 @@ export async function updateMaintenanceDetails(
   requestId: number, 
   observations: string, 
   attachments: string[], 
-  projectId?: number | null
+  projectId?: number | null,
+  date?: string | null,
+  cost?: number | null
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -128,8 +130,14 @@ export async function updateMaintenanceDetails(
   if (projectId !== undefined) {
     updatePayload.project_id = projectId
   }
+  if (date !== undefined && date !== null) {
+    updatePayload.date = date
+  }
+  if (cost !== undefined && cost !== null) {
+    updatePayload.cost = cost
+  }
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('maintenance_requests')
     .update(updatePayload)
     .eq('maintenance_request_id', requestId)
