@@ -10,6 +10,9 @@ export async function createMachineryLog(formData: FormData) {
   const rawStartTime = formData.get('start_time') as string | null
   const fuel_liters = parseFloat(formData.get('fuel_liters') as string) || 0
   const fuel_price = parseFloat(formData.get('fuel_price') as string) || null
+  // 'qr' = open shift lifecycle (accurate time tracking)
+  // 'manual' = instant completion (fuel/rate estimation)
+  const input_method = (formData.get('input_method') as string) || 'manual'
 
   // Fetch machine type and benchmark rate
   const { data: machine } = await supabase
@@ -20,16 +23,25 @@ export async function createMachineryLog(formData: FormData) {
 
   const isMachineType = machine?.machine_type !== 'truck'
   const rate = Number(machine?.expected_consumption_rate) || 0
+
+  // QR machines open a shift lifecycle — no effective_hours yet (calculated on close)
+  // Manual machines calculate effective_hours immediately from fuel/rate
+  // Trucks always open a shift (no effective_hours)
+  const useQrLifecycle = isMachineType && input_method === 'qr'
+
   const effective_hours =
-    isMachineType && rate > 0 && fuel_liters
+    isMachineType && !useQrLifecycle && rate > 0 && fuel_liters
       ? Number((fuel_liters / rate).toFixed(2))
       : null
 
-  // For heavy machines: start_time is omitted/null and shift is marked completed
-  // For trucks: start_time is required and shift starts open
-  const start_time = isMachineType ? null : (rawStartTime || new Date().toTimeString().slice(0, 5))
-  const is_completed = isMachineType ? true : false
-  const status = isMachineType ? 'completed' : 'started'
+  const start_time = useQrLifecycle
+    ? (rawStartTime || new Date().toTimeString().slice(0, 5))
+    : isMachineType
+      ? null
+      : (rawStartTime || new Date().toTimeString().slice(0, 5))
+
+  const is_completed = useQrLifecycle ? false : isMachineType ? true : false
+  const status = (useQrLifecycle || !isMachineType) ? 'started' : 'completed'
 
   const { data, error } = await supabase
     .from('machinery_logs')
@@ -90,12 +102,13 @@ export async function createMachineryLog(formData: FormData) {
  * Includes Just-in-Time (JIT) 8-hour auto-close check for orphan shifts.
  */
 export async function getActiveShiftForMachine(machineId: number) {
-  const { data: shift, error } = await supabase
+  const { data: shifts, error } = await supabase
     .from('machinery_logs')
     .select(`
       machinery_log_id,
       machine_id,
       project_id,
+      hash_id,
       date,
       operator_name,
       start_time,
@@ -111,11 +124,14 @@ export async function getActiveShiftForMachine(machineId: number) {
     `)
     .eq('machine_id', machineId)
     .eq('is_completed', false)
-    .maybeSingle()
+    .order('created_at', { ascending: false })
+    .limit(1)
 
-  if (error || !shift) {
+  if (error || !shifts || shifts.length === 0) {
     return { activeShift: null }
   }
+
+  const shift = shifts[0]
 
   // JIT Orphan Shift Evaluation: Check if open shift exceeds 8 hours
   const createdAtTime = new Date(shift.created_at).getTime()
@@ -242,11 +258,20 @@ export async function resumeShift(logId: number) {
 
 /**
  * Completes and closes an active shift, sealing any ongoing pause and updating end_time and observations.
+ * For machine-type logs (opened via QR), calculates effective_hours from actual wall-clock time.
  */
 export async function completeShift(logId: number, endTime?: string, observations?: string) {
   const { data: shift, error: fetchErr } = await supabase
     .from('machinery_logs')
-    .select('pause_events, status, is_completed, total_paused_minutes, observations')
+    .select(`
+      pause_events,
+      status,
+      is_completed,
+      total_paused_minutes,
+      observations,
+      start_time,
+      machinery(machine_type)
+    `)
     .eq('machinery_log_id', logId)
     .single()
 
@@ -278,6 +303,17 @@ export async function completeShift(logId: number, endTime?: string, observation
     ? (shift.observations ? `${shift.observations} | ${observations}` : observations)
     : shift.observations
 
+  // For machine-type logs, calculate effective_hours from actual elapsed time minus pauses
+  const machineType = (shift.machinery as any)?.machine_type
+  let effective_hours: number | null = null
+  if (machineType !== 'truck' && shift.start_time) {
+    const [sh, sm] = (shift.start_time as string).split(':').map(Number)
+    const [eh, em] = calculatedEndTime.split(':').map(Number)
+    const totalShiftMinutes = (eh * 60 + em) - (sh * 60 + sm)
+    const netMinutes = Math.max(0, totalShiftMinutes - totalMinutes)
+    effective_hours = Number((netMinutes / 60).toFixed(2))
+  }
+
   const { error: updateErr } = await supabase
     .from('machinery_logs')
     .update({
@@ -287,6 +323,7 @@ export async function completeShift(logId: number, endTime?: string, observation
       pause_events: currentEvents,
       total_paused_minutes: totalMinutes,
       observations: combinedObservations,
+      ...(effective_hours !== null ? { effective_hours } : {}),
     })
     .eq('machinery_log_id', logId)
 

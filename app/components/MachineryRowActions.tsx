@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { Edit2, Trash2, X, Save, ChevronDown, ChevronRight, Truck, Wrench } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Edit2, Trash2, X, Save, ChevronDown, ChevronRight, Truck, Wrench, QrCode, Loader2 } from 'lucide-react'
 import { updateMachinery, deleteMachinery } from '@/app/app/machinery/actions'
 import { useMachineryStore } from '@/lib/store/machineryStore'
+import { exportMachineryQrPdf, exportMachineryQrSvg } from '@/lib/pdf/machineryQrExporter'
 import { toast } from 'sonner'
 
 interface MachineryRowActionsProps {
@@ -24,9 +25,53 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
   const [observations, setObservations] = useState(machine.observations || '')
   const [isRented, setIsRented] = useState(!!machine.is_rented)
   const [loading, setLoading] = useState(false)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const [exportingFormat, setExportingFormat] = useState<'pdf' | 'svg' | null>(null)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
 
   // Use Zustand store actions
   const { removeMachine, updateMachine: updateLocalMachine } = useMachineryStore()
+
+  // Close export dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showExportMenu])
+
+  const handleExportPdf = async () => {
+    try {
+      setExportingFormat('pdf')
+      await exportMachineryQrPdf(machine)
+      toast.success('Ficha PDF con QR generada exitosamente')
+    } catch (err) {
+      console.error('Error al exportar QR a PDF:', err)
+      toast.error('Error al generar la ficha PDF del código QR')
+    } finally {
+      setExportingFormat(null)
+      setShowExportMenu(false)
+    }
+  }
+
+  const handleExportSvg = () => {
+    try {
+      setExportingFormat('svg')
+      exportMachineryQrSvg(machine)
+      toast.success('Vector SVG del QR descargado exitosamente')
+    } catch (err) {
+      console.error('Error al exportar QR a SVG:', err)
+      toast.error('Error al generar el vector SVG')
+    } finally {
+      setExportingFormat(null)
+      setShowExportMenu(false)
+    }
+  }
 
   const handleUpdate = async () => {
     setLoading(true)
@@ -216,15 +261,54 @@ export default function MachineryRowActions({ machine, dict }: MachineryRowActio
         </td>
         <td className="p-4 text-right">
           <div className="flex justify-end items-center gap-2">
-            <button 
-              onClick={() => setIsEditing(true)} 
+            {/* QR Export dropdown */}
+            <div className="relative" ref={exportMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={!!exportingFormat}
+                className={`p-2 rounded-lg transition-all flex items-center gap-0.5 ${
+                  showExportMenu
+                    ? 'bg-indigo-50 text-indigo-600'
+                    : 'text-gray-400 hover:text-indigo-600 hover:bg-indigo-50'
+                } disabled:opacity-50`}
+                title="Exportar QR (PDF / SVG)"
+              >
+                {exportingFormat ? (
+                  <Loader2 size={18} className="animate-spin text-indigo-600" />
+                ) : (
+                  <>
+                    <QrCode size={18} />
+                    <ChevronDown size={12} className={`transition-transform duration-200 ${showExportMenu ? 'rotate-180 text-indigo-600' : 'text-gray-400'}`} />
+                  </>
+                )}
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1 text-sm">
+                  <button
+                    onClick={handleExportPdf}
+                    className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    📄 Descargar PDF
+                  </button>
+                  <button
+                    onClick={handleExportSvg}
+                    className="w-full px-3 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    🖼 Descargar SVG
+                  </button>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => setIsEditing(true)}
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
               title={dict.common.edit}
             >
               <Edit2 size={18} />
             </button>
-            <button 
-              onClick={handleDelete} 
+            <button
+              onClick={handleDelete}
               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
               title={dict.common.delete}
             >
