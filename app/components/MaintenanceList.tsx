@@ -21,6 +21,7 @@ import { updateMaintenanceStatus } from '@/app/app/maintenance/actions'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { addPdfFooters } from '@/lib/pdf/chartExporter'
+import { startOfWeek, format } from 'date-fns'
 
 interface MaintenanceListProps {
   initialRequests: any[]
@@ -46,6 +47,9 @@ interface MachineSummary {
 
 export default function MaintenanceList({ initialRequests, machinery, projects = [], dict, role }: MaintenanceListProps) {
   const [requests, setRequests] = useState(initialRequests)
+  const today = format(new Date(), 'yyyy-MM-dd')
+  const [dateFrom, setDateFrom] = useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'))
+  const [dateTo, setDateTo] = useState(today)
   const [viewMode, setViewMode] = useState<'aggregated' | 'detailed'>('aggregated')
   const [projectFilter, setProjectFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -113,6 +117,27 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
     return `${selectedMachines.length} máquinas seleccionadas`
   }, [selectedMachines, isAllSelected, machinery])
 
+  const handleDateChange = (type: 'from' | 'to', value: string) => {
+    if (!value) return
+    if (value > today) {
+      toast.error(dict.common?.notifications?.future_date_error || 'No se pueden seleccionar fechas futuras.')
+      return
+    }
+    if (type === 'from') {
+      if (dateTo && value > dateTo) {
+        toast.error(dict.common?.notifications?.invalid_range_error || 'La fecha de inicio no puede ser posterior a la fecha de fin.')
+        return
+      }
+      setDateFrom(value)
+    } else {
+      if (dateFrom && value < dateFrom) {
+        toast.error(dict.common?.notifications?.invalid_range_error || 'La fecha de fin no puede ser anterior a la fecha de inicio.')
+        return
+      }
+      setDateTo(value)
+    }
+  }
+
   // Filtered requests
   const filteredRequests = useMemo(() => {
     return requests.filter(r => {
@@ -124,9 +149,10 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
         (r.project_name && r.project_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
         r.machinery?.machinery_full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.machinery?.external_code?.toLowerCase().includes(searchQuery.toLowerCase())
-      return matchesMachine && matchesStatus && matchesProject && matchesSearch
+      const matchesDate = (!dateFrom || r.date >= dateFrom) && (!dateTo || r.date <= dateTo)
+      return matchesMachine && matchesStatus && matchesProject && matchesSearch && matchesDate
     })
-  }, [requests, selectedMachines, statusFilter, projectFilter, searchQuery])
+  }, [requests, selectedMachines, statusFilter, projectFilter, searchQuery, dateFrom, dateTo])
 
   // Machine-level aggregation
   const { aggregatedData, totals } = useMemo(() => {
@@ -452,7 +478,31 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
           </div>
         </div>
 
-        {/* Row 2: Search + Export */}
+        {/* Row 2: Date range */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Desde</label>
+            <input
+              type="date"
+              value={dateFrom}
+              max={today}
+              onChange={(e) => handleDateChange('from', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Hasta</label>
+            <input
+              type="date"
+              value={dateTo}
+              max={today}
+              onChange={(e) => handleDateChange('to', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Row 3: Search + Export */}
         <div className="flex gap-3 items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />

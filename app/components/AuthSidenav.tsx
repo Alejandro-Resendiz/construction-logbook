@@ -14,23 +14,38 @@ import {
   X,
   FileText,
   Wrench,
-  Hammer
+  Hammer,
+  Settings
 } from 'lucide-react'
 import LogoutButton from './LogoutButton'
 
 interface AuthSidenavProps {
   dict: any
   role: string | null
+  initialAvatarUrl?: string | null
 }
 
-export default function AuthSidenav({ dict, role }: AuthSidenavProps) {
+export default function AuthSidenav({ dict, role, initialAvatarUrl = null }: AuthSidenavProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl)
   const pathname = usePathname()
 
   // Close sidebar when route changes
   useEffect(() => {
     setIsOpen(false)
   }, [pathname])
+
+  // Listen for avatar updates dispatched by AccountSettingsClient
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ url: string }>).detail
+      setAvatarUrl(detail.url)
+    }
+    window.addEventListener('avatar-updated', handler)
+    return () => {
+      window.removeEventListener('avatar-updated', handler)
+    }
+  }, [])
 
   const links = [
     { 
@@ -74,6 +89,12 @@ export default function AuthSidenav({ dict, role }: AuthSidenavProps) {
       href: '/app/machinery_depreciation', 
       icon: Hammer,
       roles: ['admin']
+    },
+    {
+      name: 'Configuración de Cuenta',
+      href: '/app/settings',
+      icon: Settings,
+      roles: ['admin', 'resident']
     }
   ]
 
@@ -147,9 +168,18 @@ export default function AuthSidenav({ dict, role }: AuthSidenavProps) {
 
         <div className="p-4 border-t border-gray-100">
           <div className="flex items-center gap-3 px-3 py-3 mb-2">
-            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
-              <User size={20} />
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="h-10 w-10 rounded-full object-cover"
+                onError={() => setAvatarUrl(null)}
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
+                <User size={20} />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate uppercase leading-none mb-1">
                 {role ?? 'User'}
