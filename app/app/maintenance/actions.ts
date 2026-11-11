@@ -192,3 +192,27 @@ export async function uploadMaintenanceAttachment(file: File) {
 
   return publicUrl
 }
+
+export async function deleteMaintenanceRequest(requestId: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const role = user?.user_metadata?.role || null
+  if (role !== 'admin') {
+    return { error: 'Forbidden. Solo los administradores pueden eliminar solicitudes de mantenimiento.' }
+  }
+
+  const { error } = await supabaseAdmin
+    .from('maintenance_requests')
+    .delete()
+    .eq('maintenance_request_id', requestId)
+
+  if (error) {
+    console.error('Error deleting maintenance request:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/app/maintenance')
+  return { success: true }
+}

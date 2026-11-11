@@ -16,8 +16,11 @@ import {
   ListFilter,
   Clock,
   Wrench,
+  Trash2,
+  AlertTriangle,
+  X,
 } from 'lucide-react'
-import { updateMaintenanceStatus } from '@/app/app/maintenance/actions'
+import { updateMaintenanceStatus, deleteMaintenanceRequest } from '@/app/app/maintenance/actions'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { addPdfFooters } from '@/lib/pdf/chartExporter'
@@ -68,6 +71,9 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
   const [expandedMachines, setExpandedMachines] = useState<Set<number>>(new Set())
 
   const isAdmin = role === 'admin'
+  const [isDeleteMode, setIsDeleteMode] = useState(false)
+  const [requestToDelete, setRequestToDelete] = useState<any | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Close multiselect on click outside
   useEffect(() => {
@@ -224,6 +230,20 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
     } else {
       toast.error(res.error || 'Error al actualizar estado')
     }
+  }
+
+  const handleDeleteRequest = async () => {
+    if (!requestToDelete) return
+    setIsDeleting(true)
+    const res = await deleteMaintenanceRequest(requestToDelete.maintenance_request_id)
+    if (res.success) {
+      setRequests(prev => prev.filter(r => r.maintenance_request_id !== requestToDelete.maintenance_request_id))
+      toast.success(dict.common?.notifications?.success_delete || 'Mantenimiento eliminado correctamente.')
+      setRequestToDelete(null)
+    } else {
+      toast.error(res.error || dict.common?.notifications?.error_delete || 'Error al eliminar mantenimiento.')
+    }
+    setIsDeleting(false)
   }
 
   const handleExportPdf = async () => {
@@ -595,12 +615,48 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
             </button>
           </div>
         </div>
-        <span className="text-xs text-gray-500 font-medium">
-          {viewMode === 'aggregated'
-            ? `${aggregatedData.length} ${aggregatedData.length === 1 ? 'máquina' : 'máquinas'}`
-            : `${filteredRequests.length} ${filteredRequests.length === 1 ? 'servicio' : 'servicios'}`}
-        </span>
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setIsDeleteMode(prev => !prev)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                isDeleteMode
+                  ? 'bg-red-50 text-red-700 border-red-300 ring-2 ring-red-300 shadow-sm'
+                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-red-600'
+              }`}
+              title={isDeleteMode ? 'Desactivar modo eliminación' : 'Activar modo eliminación'}
+            >
+              <Trash2 size={13} className={isDeleteMode ? 'text-red-600' : 'text-gray-400'} />
+              <span>{isDeleteMode ? 'Modo Eliminación: Activo' : 'Modo Eliminación'}</span>
+            </button>
+          )}
+          <span className="text-xs text-gray-500 font-medium">
+            {viewMode === 'aggregated'
+              ? `${aggregatedData.length} ${aggregatedData.length === 1 ? 'máquina' : 'máquinas'}`
+              : `${filteredRequests.length} ${filteredRequests.length === 1 ? 'servicio' : 'servicios'}`}
+          </span>
+        </div>
       </div>
+
+      {/* ── Deletion Mode Warning Banner ── */}
+      {isAdmin && isDeleteMode && (
+        <div className="bg-red-50/80 border border-red-200 rounded-xl p-3 flex items-center justify-between text-xs text-red-800 animate-in fade-in duration-150">
+          <div className="flex items-center gap-2.5 font-medium">
+            <AlertTriangle size={16} className="text-red-600 flex-shrink-0" />
+            <span>
+              <strong>Modo eliminación activo:</strong> Haz clic en el botón de eliminar (<Trash2 size={12} className="inline text-red-600 mx-0.5" />) de cualquier solicitud para darla de baja con confirmación de seguridad.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsDeleteMode(false)}
+            className="text-red-700 hover:text-red-900 font-bold ml-3 text-xs underline whitespace-nowrap"
+          >
+            Desactivar
+          </button>
+        </div>
+      )}
 
       {/* ── Table ── */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
@@ -688,13 +744,25 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
                                 </span>
                                 <span className="text-gray-500 font-mono text-xs flex-shrink-0">{req.date}</span>
                                 <span className="text-gray-800 flex-1">{req.description}</span>
-                                <Link
-                                  href={`/app/maintenance/${req.maintenance_request_id}`}
-                                  className="flex-shrink-0 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                                  title="Ver detalle"
-                                >
-                                  <Edit2 size={12} />
-                                </Link>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <Link
+                                    href={`/app/maintenance/${req.maintenance_request_id}`}
+                                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                                    title="Ver detalle"
+                                  >
+                                    <Edit2 size={12} />
+                                  </Link>
+                                  {isAdmin && isDeleteMode && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setRequestToDelete(req)}
+                                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-all"
+                                      title="Eliminar mantenimiento"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                                </div>
                               </li>
                             ))}
                           </ul>
@@ -758,7 +826,9 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
                     req={req}
                     dict={dict}
                     isAdmin={isAdmin}
+                    isDeleteMode={isAdmin && isDeleteMode}
                     onStatusUpdate={handleStatusUpdate}
+                    onDeleteRequest={setRequestToDelete}
                   />
                 ))
               )}
@@ -779,11 +849,119 @@ export default function MaintenanceList({ initialRequests, machinery, projects =
           </table>
         )}
       </div>
+
+      {/* ── Confirmation Modal for Deletion ── */}
+      {requestToDelete && (
+        <div
+          className="fixed inset-0 bg-gray-900/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => !isDeleting && setRequestToDelete(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl border border-gray-100 max-w-md w-full p-6 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-red-100 text-red-600 rounded-full flex-shrink-0">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">
+                    ¿Eliminar solicitud de mantenimiento?
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Esta acción es irreversible y eliminará el registro permanentemente.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isDeleting && setRequestToDelete(null)}
+                disabled={isDeleting}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                title="Cerrar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Request Summary */}
+            <div className="bg-gray-50 rounded-lg p-3 text-xs space-y-1.5 border border-gray-100">
+              <div className="flex justify-between">
+                <span className="text-gray-500 font-medium">Máquina:</span>
+                <span className="font-bold text-gray-800">
+                  [{requestToDelete.machinery?.external_code || requestToDelete.machine_id}] {requestToDelete.machinery?.machinery_name}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 font-medium">Fecha:</span>
+                <span className="font-mono text-gray-700">{requestToDelete.date}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500 font-medium">Tipo:</span>
+                <span className="font-bold uppercase text-gray-700">{requestToDelete.maintenance_type}</span>
+              </div>
+              {requestToDelete.description && (
+                <div className="pt-1.5 border-t border-gray-200">
+                  <span className="text-gray-500 font-medium block mb-0.5">Descripción:</span>
+                  <p className="text-gray-700 line-clamp-2">{requestToDelete.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setRequestToDelete(null)}
+                disabled={isDeleting}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-800 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteRequest}
+                disabled={isDeleting}
+                className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-400 shadow-sm"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Eliminando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    <span>Eliminar Registro</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function MaintenanceRow({ req, dict, isAdmin, onStatusUpdate }: { req: any, dict: any, isAdmin: boolean, onStatusUpdate: any }) {
+function MaintenanceRow({
+  req,
+  dict,
+  isAdmin,
+  isDeleteMode,
+  onStatusUpdate,
+  onDeleteRequest,
+}: {
+  req: any
+  dict: any
+  isAdmin: boolean
+  isDeleteMode?: boolean
+  onStatusUpdate: any
+  onDeleteRequest?: (req: any) => void
+}) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const statusColors: Record<string, string> = {
@@ -847,13 +1025,25 @@ function MaintenanceRow({ req, dict, isAdmin, onStatusUpdate }: { req: any, dict
           )}
         </td>
         <td className="p-4 text-right">
-          <Link
-            href={`/app/maintenance/${req.maintenance_request_id}`}
-            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all inline-block"
-            title={dict.common.edit}
-          >
-            <Edit2 size={16} />
-          </Link>
+          <div className="flex items-center justify-end gap-1">
+            <Link
+              href={`/app/maintenance/${req.maintenance_request_id}`}
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all inline-block"
+              title={dict.common.edit}
+            >
+              <Edit2 size={16} />
+            </Link>
+            {isDeleteMode && onDeleteRequest && (
+              <button
+                type="button"
+                onClick={() => onDeleteRequest(req)}
+                className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all inline-block"
+                title="Eliminar mantenimiento"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+          </div>
         </td>
       </tr>
       {isExpanded && (
