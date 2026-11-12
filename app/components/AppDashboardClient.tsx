@@ -20,7 +20,7 @@ interface AppDashboardClientProps {
 export default function AppDashboardClient({ machinery, projects, dict, common }: AppDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'table' | 'analytics'>('table')
   const [viewMode, setViewMode] = useState<'aggregated' | 'daily' | 'detailed'>('aggregated')
-  const [omitWeekends, setOmitWeekends] = useState(true)
+  const [omitWeekends, setOmitWeekends] = useState(true) // comment added for merge conflicts
   const [selectedProject, setSelectedProject] = useState('')
   const [projectList, setProjectList] = useState<any[]>(projects || [])
   
