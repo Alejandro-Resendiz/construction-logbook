@@ -20,6 +20,7 @@ interface AppDashboardClientProps {
 export default function AppDashboardClient({ machinery, projects, dict, common }: AppDashboardClientProps) {
   const [activeTab, setActiveTab] = useState<'table' | 'analytics'>('table')
   const [viewMode, setViewMode] = useState<'aggregated' | 'daily' | 'detailed'>('aggregated')
+  const [omitWeekends, setOmitWeekends] = useState(true) // comment added for merge conflicts
   const [selectedProject, setSelectedProject] = useState('')
   const [projectList, setProjectList] = useState<any[]>(projects || [])
   
@@ -213,15 +214,30 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
     const days: string[] = []
     const curr = new Date(start)
     while (curr <= end) {
-      days.push(format(curr, 'yyyy-MM-dd'))
+      const dayOfWeek = curr.getDay() // 0 = Sun, 6 = Sat
+      if (!omitWeekends || (dayOfWeek !== 0 && dayOfWeek !== 6)) {
+        days.push(format(curr, 'yyyy-MM-dd'))
+      }
       curr.setDate(curr.getDate() + 1)
     }
     return days
-  }, [dateFrom, dateTo])
+  }, [dateFrom, dateTo, omitWeekends])
+
+  // Filter logs for aggregation: when in daily mode and omitWeekends is active, exclude weekend logs
+  const activeLogs = useMemo(() => {
+    if (viewMode === 'daily' && omitWeekends) {
+      return logs.filter(log => {
+        if (!log.date) return false
+        const dayOfWeek = new Date(log.date + 'T00:00:00').getDay()
+        return dayOfWeek !== 0 && dayOfWeek !== 6
+      })
+    }
+    return logs
+  }, [logs, viewMode, omitWeekends])
 
   // Machine-Level Aggregation computations
   const { aggregatedData, totals } = useMemo(() => {
-    if (!logs || logs.length === 0) {
+    if (!activeLogs || activeLogs.length === 0) {
       return {
         aggregatedData: [],
         totals: {
@@ -248,10 +264,10 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
       total_liters: number
       total_cost: number
       avg_rate: number
-      daily_liters: Record<string, number>
+      daily_hours: Record<string, number>
     }>()
 
-    logs.forEach(log => {
+    activeLogs.forEach(log => {
       const mId = log.machine_id
       const isMachine = log.machinery?.machine_type !== 'truck'
       const rate = Number(log.machinery?.expected_consumption_rate) || 0
@@ -271,12 +287,12 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
         existing.total_liters += liters
         existing.total_cost += cost
         if (logDate) {
-          existing.daily_liters[logDate] = (existing.daily_liters[logDate] || 0) + liters
+          existing.daily_hours[logDate] = Number(((existing.daily_hours[logDate] || 0) + hours).toFixed(2))
         }
       } else {
         const dailyInit: Record<string, number> = {}
         if (logDate) {
-          dailyInit[logDate] = liters
+          dailyInit[logDate] = Number(hours.toFixed(2))
         }
         map.set(mId, {
           machine_id: mId,
@@ -290,7 +306,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
           total_liters: liters,
           total_cost: cost,
           avg_rate: 0,
-          daily_liters: dailyInit
+          daily_hours: dailyInit
         })
       }
     })
@@ -311,7 +327,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
 
     const dailyTotals: Record<string, number> = {}
     daysInRange.forEach(day => {
-      dailyTotals[day] = rows.reduce((acc, r) => acc + (r.daily_liters[day] || 0), 0)
+      dailyTotals[day] = Number(rows.reduce((acc, r) => acc + (r.daily_hours[day] || 0), 0).toFixed(2))
     })
 
     return {
@@ -326,7 +342,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
         dailyTotals
       }
     }
-  }, [logs, fallbackPrice, daysInRange])
+  }, [activeLogs, fallbackPrice, daysInRange])
 
   const exportPDF = async () => {
     const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js') as any
@@ -340,10 +356,10 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
 
       // Header
       doc.setFontSize(18)
-      doc.text('Reporte Agrupado Diario de Combustible', 14, 15)
+      doc.text('Reporte Agrupado Diario de Horas Efectivas', 14, 15)
 
       doc.setFontSize(10)
-      doc.text(`Proyecto: ${projName}  |  Periodo: ${dateFrom} al ${dateTo}`, 14, 22)
+      doc.text(`Proyecto: ${projName}  |  Periodo: ${dateFrom} al ${dateTo}${omitWeekends ? ' (Lun-Vie)' : ''}`, 14, 22)
 
       const dayHeaders = daysInRange.map(d => format(new Date(d + 'T00:00:00'), 'dd/MM'))
       const tableColumn = [
@@ -359,7 +375,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
         r.external_code,
         r.machine_full_name,
         r.machine_type === 'truck' ? 'Camión' : 'Máquina',
-        ...daysInRange.map(d => r.daily_liters[d] ? r.daily_liters[d].toFixed(1) : '-'),
+        ...daysInRange.map(d => r.daily_hours[d] ? `${r.daily_hours[d].toFixed(1)} h` : '-'),
         `$${r.total_cost.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
         r.avg_rate > 0 ? r.avg_rate.toFixed(1) : '-'
       ])
@@ -369,7 +385,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
         'TOTALES',
         `${totals.totalMachines} equipos`,
         '-',
-        ...daysInRange.map(d => totals.dailyTotals[d] ? totals.dailyTotals[d].toFixed(1) : '-'),
+        ...daysInRange.map(d => totals.dailyTotals[d] ? `${totals.dailyTotals[d].toFixed(1)} h` : '-'),
         `$${totals.totalCost.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
         totals.avgRate > 0 ? totals.avgRate.toFixed(1) : '-'
       ])
@@ -389,7 +405,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
         }
       })
 
-      const fileName = `Reporte_Diario_${dateFrom}_a_${dateTo}.pdf`
+      const fileName = `Reporte_Diario_Horas_${dateFrom}_a_${dateTo}.pdf`
       doc.save(fileName)
     } else if (viewMode === 'aggregated') {
       const doc = new jsPDF()
@@ -398,7 +414,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
       doc.text('Reporte Agrupado de Maquinaria', 14, 15)
       
       doc.setFontSize(10)
-      doc.text(`Proyecto: ${projName}  |  Periodo: ${dateFrom} al ${dateTo}`, 14, 22)
+      doc.text(`Proyecto: ${projName}  |  Periodo: ${dateFrom} al ${dateTo}${omitWeekends ? ' (Lun-Vie)' : ''}`, 14, 22)
       
       const tableColumn = [
         'Código',
@@ -553,8 +569,8 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet('Resumen Diario')
 
-      worksheet.addRow(['REPORTE DIARIO DE COMBUSTIBLE'])
-      worksheet.addRow([`Proyecto: ${projName}`, `Periodo: ${dateFrom} al ${dateTo}`])
+      worksheet.addRow(['REPORTE DIARIO DE HORAS EFECTIVAS'])
+      worksheet.addRow([`Proyecto: ${projName}`, `Periodo: ${dateFrom} al ${dateTo}${omitWeekends ? ' (Lun-Vie)' : ''}`])
       worksheet.addRow([])
 
       const dayHeaders = daysInRange.map(d => format(new Date(d + 'T00:00:00'), 'dd/MM'))
@@ -571,7 +587,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
           r.external_code,
           r.machine_full_name,
           r.machine_type === 'truck' ? 'Camión' : 'Máquina',
-          ...daysInRange.map(d => r.daily_liters[d] || 0),
+          ...daysInRange.map(d => r.daily_hours[d] || 0),
           r.total_cost,
           r.avg_rate
         ])
@@ -593,7 +609,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
 
       const buffer = await workbook.xlsx.writeBuffer()
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-      const fileName = `Reporte_Diario_${dateFrom}_a_${dateTo}.xlsx`
+      const fileName = `Reporte_Diario_Horas_${dateFrom}_a_${dateTo}.xlsx`
       saveAs(blob, fileName)
     } else if (viewMode === 'aggregated') {
       const workbook = new ExcelJS.Workbook()
@@ -903,39 +919,62 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
 
       {activeTab === 'table' ? (
         <div className="space-y-3">
-          {/* View Mode Toggle: Aggregated vs Detailed */}
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Modo de Tabla:</span>
-              <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
-                <button
-                  onClick={() => setViewMode('aggregated')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                    viewMode === 'aggregated' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <Layers size={14} />
-                  Agrupado por Máquina
-                </button>
-                <button
-                  onClick={() => setViewMode('daily')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                    viewMode === 'daily' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <CalendarDays size={14} />
-                  Desglose Diario
-                </button>
-                <button
-                  onClick={() => setViewMode('detailed')}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                    viewMode === 'detailed' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  <ListFilter size={14} />
-                  Detalle de Registros
-                </button>
+          {/* View Mode Toggle: Aggregated vs Daily vs Detailed */}
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Modo de Tabla:</span>
+                <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                  <button
+                    onClick={() => setViewMode('aggregated')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                      viewMode === 'aggregated' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <Layers size={14} />
+                    Agrupado por Máquina
+                  </button>
+                  <button
+                    onClick={() => setViewMode('daily')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                      viewMode === 'daily' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <CalendarDays size={14} />
+                    Desglose Diario
+                  </button>
+                  <button
+                    onClick={() => setViewMode('detailed')}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                      viewMode === 'detailed' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <ListFilter size={14} />
+                    Detalle de Registros
+                  </button>
+                </div>
               </div>
+
+              {viewMode === 'daily' && (
+                <button
+                  type="button"
+                  onClick={() => setOmitWeekends(prev => !prev)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                    omitWeekends
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-sm'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:text-gray-800'
+                  }`}
+                  title={omitWeekends ? 'Omitiendo fines de semana. Haz clic para incluirlos.' : 'Incluyendo fines de semana. Haz clic para omitirlos.'}
+                >
+                  <input
+                    type="checkbox"
+                    checked={omitWeekends}
+                    onChange={() => {}}
+                    className="rounded text-blue-600 focus:ring-blue-500 pointer-events-none h-3.5 w-3.5"
+                  />
+                  <span>Omitir fines de semana</span>
+                </button>
+              )}
             </div>
 
             <span className="text-xs text-gray-500 font-medium">
@@ -948,7 +987,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
           {/* Table Container */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
             {viewMode === 'daily' ? (
-              /* DAILY DRILL-DOWN VIEW (FUEL BY DAY) */
+              /* DAILY DRILL-DOWN VIEW (HOURS BY DAY) */
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100 text-gray-900 text-xs uppercase tracking-wider">
@@ -989,10 +1028,10 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
                           </span>
                         </td>
                         {daysInRange.map(day => {
-                          const val = row.daily_liters[day]
+                          const val = row.daily_hours[day]
                           return (
                             <td key={day} className="p-4 text-sm text-right font-mono font-semibold text-blue-900 whitespace-nowrap">
-                              {val ? `${val.toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} L` : '-'}
+                              {val != null && val > 0 ? `${val.toFixed(1)} h` : '-'}
                             </td>
                           )
                         })}
@@ -1016,7 +1055,7 @@ export default function AppDashboardClient({ machinery, projects, dict, common }
                         const daySum = totals.dailyTotals[day]
                         return (
                           <td key={day} className="p-4 text-sm text-right font-mono font-bold text-blue-900 whitespace-nowrap">
-                            {daySum ? `${daySum.toLocaleString('es-MX', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} L` : '-'}
+                            {daySum != null && daySum > 0 ? `${daySum.toFixed(1)} h` : '-'}
                           </td>
                         )
                       })}
